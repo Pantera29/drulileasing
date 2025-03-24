@@ -1,7 +1,7 @@
 import { Benefits } from "@/components/landing/benefits";
 import { CTA } from "@/components/landing/cta";
 // import { EquipmentCategories } from "@/components/landing/equipment-categories";
-import { Features } from "@/components/landing/features";
+// import { Features } from "@/components/landing/features";
 import { Hero } from "@/components/landing/hero";
 import { HowItWorks } from "@/components/landing/howItWorks";
 import { Simulator } from "@/components/landing/simulator";

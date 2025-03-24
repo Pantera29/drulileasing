@@ -1,39 +1,38 @@
-import Image from "next/image";
+// import Image from "next/image";
 import { CheckCircle2, Clock, CreditCard, DollarSign, ThumbsUp, Zap } from "lucide-react";
 
 const benefits = [
   {
-    name: "Aprobación rápida",
+    title: "Equipos de alta calidad",
     description:
-      "Tu solicitud de arrendamiento se aprueba en menos de 48 horas.",
-    icon: Clock,
-  },
-  {
-    name: "Sin aval requerido",
-    description:
-      "No necesitas presentar un aval para acceder a nuestro arrendamiento.",
-    icon: ThumbsUp,
-  },
-  {
-    name: "Deducible de impuestos",
-    description:
-      "El 100% del arrendamiento es deducible de impuestos para tu consultorio.",
-    icon: DollarSign,
-  },
-  {
-    name: "Conserva tu liquidez",
-    description:
-      "No compres equipo y conserva tu capital para otras inversiones importantes.",
-    icon: CreditCard,
-  },
-  {
-    name: "Equipo actualizado",
-    description:
-      "Siempre tendrás acceso a la tecnología más reciente sin grandes inversiones.",
+      "Accede a los mejores equipos médicos y dentales del mercado sin comprometer tu capital.",
     icon: Zap,
   },
   {
-    name: "Servicio garantizado",
+    title: "Proceso rápido y sencillo",
+    description: "Aprobación en menos de 48 horas y documentación mínima.",
+    icon: Clock,
+  },
+  {
+    title: "Financiamiento a tu medida",
+    description:
+      "Planes flexibles adaptados a tus necesidades y flujo de efectivo.",
+    icon: CreditCard,
+  },
+  {
+    title: "Beneficios fiscales",
+    description:
+      "100% deducible de impuestos como gasto de operación.",
+    icon: DollarSign,
+  },
+  {
+    title: "Sin pagos iniciales grandes",
+    description:
+      "Conserva tu capital para otras inversiones o emergencias.",
+    icon: ThumbsUp,
+  },
+  {
+    title: "Servicio técnico incluido",
     description:
       "Mantenimiento incluido durante toda la vigencia de tu contrato.",
     icon: CheckCircle2,
@@ -56,14 +55,14 @@ export function Benefits() {
         <div className="grid grid-cols-1 gap-y-12 sm:grid-cols-2 sm:gap-x-6 lg:grid-cols-3 lg:gap-x-8 lg:gap-y-16">
           {benefits.map((benefit) => (
             <div
-              key={benefit.name}
+              key={benefit.title}
               className="group relative rounded-2xl p-6 hover:bg-white hover:shadow-lg transition-all duration-300"
             >
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors">
                 <benefit.icon className="h-6 w-6" />
               </div>
               <h3 className="mt-4 text-lg font-semibold leading-tight text-gray-900 group-hover:text-blue-600 transition-colors">
-                {benefit.name}
+                {benefit.title}
               </h3>
               <p className="mt-2 text-sm text-gray-500">
                 {benefit.description}

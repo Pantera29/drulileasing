@@ -2,6 +2,10 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 
+/**
+ * Ruta para cerrar sesión
+ * Utiliza el método signOut de Supabase Auth y redirige al usuario a la página de inicio.
+ */
 export async function POST() {
   const cookieStore = cookies()
   
@@ -13,10 +17,10 @@ export async function POST() {
         get(name: string) {
           return cookieStore.get(name)?.value
         },
-        set(name: string, value: string, options: any) {
+        set(name: string, value: string, options: Record<string, unknown>) {
           cookieStore.set({ name, value, ...options })
         },
-        remove(name: string, options: any) {
+        remove(name: string, options: Record<string, unknown>) {
           cookieStore.set({ name, value: '', ...options })
         },
       },

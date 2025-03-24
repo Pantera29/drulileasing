@@ -1,19 +1,10 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-
-// Tipos de equipos
-const equipmentTypes = [
-  { value: "dental", label: "Equipo Dental" },
-  { value: "medical", label: "Equipo Médico" },
-  { value: "imaging", label: "Equipo de Imagen" },
-  { value: "aesthetic", label: "Equipo Estético" },
-];
 
 // Plazos disponibles
 const termOptions = [
@@ -24,49 +15,19 @@ const termOptions = [
 ];
 
 export function Simulator() {
-  // Estados iniciales
-  let equipmentType = "dental";
-  let amount = 500000;
-  let term = "24";
-  
-  let setEquipmentType: any;
-  let setAmount: any; 
-  let setTerm: any;
-  
-  // Si estamos en el navegador, usamos React.useState
-  if (typeof window !== 'undefined') {
-    // @ts-ignore - ignora el error de tipado
-    const state1 = React.useState("dental");
-    equipmentType = state1[0];
-    setEquipmentType = state1[1];
-    
-    // @ts-ignore
-    const state2 = React.useState(500000);
-    amount = state2[0];
-    setAmount = state2[1];
-    
-    // @ts-ignore
-    const state3 = React.useState("24");
-    term = state3[0];
-    setTerm = state3[1];
-  }
+  // Estados con hooks (siempre al inicio, nunca condicionales)
+  const [amount, setAmount] = useState(500000);
+  const [term, setTerm] = useState("24");
 
   // Cálculos del simulador
-  const interestRate = calculateInterestRate(equipmentType, amount, parseInt(term));
+  const interestRate = calculateInterestRate(amount, parseInt(term));
   const monthlyPayment = calculateMonthlyPayment(amount, interestRate, parseInt(term));
   const totalPayment = monthlyPayment * parseInt(term);
 
   // Función para calcular la tasa de interés basada en los parámetros
-  function calculateInterestRate(type: string, amount: number, term: number) {
-    // Tasas base según el tipo de equipo
-    const baseRates: Record<string, number> = {
-      dental: 0.14,
-      medical: 0.15,
-      imaging: 0.16,
-      aesthetic: 0.17,
-    };
-
-    let rate = baseRates[type] || 0.15;
+  function calculateInterestRate(amount: number, term: number): number {
+    // Tasa base
+    let rate = 0.15;
 
     // Ajustes según el monto (montos más altos, tasas menores)
     if (amount > 1000000) rate -= 0.01;
@@ -80,14 +41,14 @@ export function Simulator() {
   }
 
   // Función para calcular el pago mensual
-  function calculateMonthlyPayment(principal: number, rate: number, term: number) {
+  function calculateMonthlyPayment(principal: number, rate: number, term: number): number {
     const monthlyRate = rate / 12;
     return (principal * monthlyRate) / (1 - Math.pow(1 + monthlyRate, -term));
   }
 
-  // Para corregir el error de tipado en onValueChange
-  const handleValueChange = (value: any) => {
-    if (setAmount) setAmount(value[0]);
+  // Para manejar los cambios en el slider
+  const handleValueChange = (value: number[]): void => {
+    setAmount(value[0]);
   };
 
   return (
@@ -105,28 +66,6 @@ export function Simulator() {
 
         <Card className="max-w-3xl mx-auto shadow-2xl border border-gray-100 overflow-hidden">
           <CardContent className="p-8 md:p-10 space-y-8">
-            {/* Selector de tipo de equipo */}
-            <div className="space-y-3">
-              <label className="text-base font-medium leading-none">
-                Tipo de equipo
-              </label>
-              <Select
-                value={equipmentType}
-                onValueChange={setEquipmentType}
-              >
-                <SelectTrigger className="w-full h-12 rounded-lg border-gray-200">
-                  <SelectValue placeholder="Selecciona el tipo de equipo" />
-                </SelectTrigger>
-                <SelectContent>
-                  {equipmentTypes.map((type) => (
-                    <SelectItem key={type.value} value={type.value}>
-                      {type.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
             {/* Slider para el monto */}
             <div className="space-y-5 pt-2">
               <div className="flex justify-between">
@@ -162,7 +101,7 @@ export function Simulator() {
                     key={option.value}
                     type="button"
                     variant={term === option.value ? "default" : "outline"}
-                    onClick={() => setTerm && setTerm(option.value)}
+                    onClick={() => setTerm(option.value)}
                     className={`w-full h-12 rounded-lg ${
                       term === option.value 
                         ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-300/50' 

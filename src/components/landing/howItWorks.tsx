@@ -1,68 +1,61 @@
-import { Button } from "@/components/ui/button";
-import { CheckCircle2, ClipboardCheck, FileText, Truck, UserCheck } from "lucide-react";
-import Link from "next/link";
-
-const steps = [
-  {
-    id: "01",
-    name: "Llena el formulario",
-    description: "Completa un formulario simple con tus datos básicos y el equipo que necesitas.",
-    icon: FileText,
-  },
-  {
-    id: "02",
-    name: "Aprobación rápida",
-    description: "Nuestro equipo revisa tu solicitud y te da respuesta en menos de 48 horas.",
-    icon: UserCheck,
-  },
-  {
-    id: "03",
-    name: "Firma tu contrato",
-    description: "Firma electrónicamente tu contrato de arrendamiento sin desplazamientos.",
-    icon: ClipboardCheck,
-  },
-  {
-    id: "04",
-    name: "Recibe tu equipo",
-    description: "Recibe e instala tu equipo médico o dental en tu consultorio.",
-    icon: Truck,
-  },
-];
+import { ArrowRight, ClipboardCheck, FileText, Truck, UserCheck } from "lucide-react";
 
 export function HowItWorks() {
+  const steps = [
+    {
+      title: "Solicitud en línea",
+      description: "Completa nuestro formulario en menos de 5 minutos y recibe una respuesta rápida.",
+      icon: ClipboardCheck,
+    },
+    {
+      title: "Aprobación de crédito",
+      description: "Evaluamos tu solicitud y emitimos una aprobación en menos de 48 horas.",
+      icon: FileText,
+    },
+    {
+      title: "Selección de equipo",
+      description: "Elige el equipo que necesitas de nuestro catálogo o de tu proveedor preferido.",
+      icon: UserCheck,
+    },
+    {
+      title: "Entrega e instalación",
+      description: "Recibe tu equipo e inicia operaciones mientras nosotros gestionamos los pagos.",
+      icon: Truck,
+    },
+  ];
+
   return (
-    <section id="plans" className="py-24 relative bg-gradient-to-b from-white to-blue-50">
+    <section id="howItWorks" className="py-24 bg-gray-50">
       <div className="container">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-            Cómo funciona <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-500">nuestro proceso</span>
-          </h2>
-          <p className="mt-4 text-lg text-gray-500 max-w-2xl mx-auto">
-            Obtén tu equipo médico o dental en 4 sencillos pasos
+        <div className="text-center mb-14">
+          <h2 className="text-4xl md:text-5xl font-bold mb-4">Proceso simple, <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-500">resultados rápidos</span></h2>
+          <p className="max-w-2xl mx-auto text-gray-600 text-lg">
+            Obtén tu equipo médico o dental en cuatro simples pasos, sin complicaciones.
           </p>
         </div>
 
-        <div className="relative">
-          <div className="absolute top-8 left-12 right-12 hidden md:block">
-            <div className="h-0.5 w-full bg-blue-100 z-0"></div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            {steps.map((step) => (
-              <div key={step.id} className="relative">
-                <div className="bg-white rounded-xl p-6 shadow-sm border border-blue-100 relative z-10 h-full">
-                  <div className="h-12 w-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mb-4 mx-auto md:mx-0">
-                    <step.icon className="h-6 w-6" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-16">
+          {steps.map((step, index) => {
+            const Icon = step.icon;
+            return (
+              <div key={index} className="relative">
+                <div className="flex flex-col items-center text-center">
+                  <div className="w-16 h-16 mb-6 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+                    <Icon className="w-8 h-8" />
                   </div>
-                  <div className="absolute -top-3 -right-3 h-8 w-8 rounded-full bg-blue-600 text-white font-semibold flex items-center justify-center text-sm">
-                    {step.id}
-                  </div>
-                  <h3 className="text-xl font-semibold text-center md:text-left mb-2">{step.name}</h3>
-                  <p className="text-gray-500 text-center md:text-left">{step.description}</p>
+                  <div className="absolute top-8 left-[calc(50%+2rem)] right-0 h-0.5 bg-blue-200 hidden lg:block" 
+                       style={{display: index === steps.length - 1 ? 'none' : ''}}></div>
+                  <div className="mb-2 text-xl font-bold">{step.title}</div>
+                  <p className="text-gray-500">{step.description}</p>
                 </div>
+                {index < steps.length - 1 && (
+                  <div className="flex justify-center mt-6 lg:hidden">
+                    <ArrowRight className="w-6 h-6 text-blue-300" />
+                  </div>
+                )}
               </div>
-            ))}
-          </div>
+            );
+          })}
         </div>
       </div>
     </section>

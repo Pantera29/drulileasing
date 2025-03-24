@@ -16,12 +16,12 @@ export function Hero() {
           </div>
           
           <h1 className="text-[2.75rem] sm:text-6xl md:text-7xl font-bold tracking-tight mb-6 leading-tight">
-            Haz crecer tu <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-500">consultorio</span> 
-            <span className="block bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-500">con Druli</span>
+            Equipamiento médico de vanguardia, <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-500"></span> 
+            <span className="block bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-500">a tu alcance</span>
           </h1>
           
           <p className="text-lg md:text-xl text-gray-600 mb-10 max-w-2xl mx-auto">
-            Enhance tu consultorio con equipos de primer nivel. Nuestra misión es empoderar a los dentistas y médicos mexicanos para seguir creciendo y cumplir sus sueños.
+          Druli es una arrendadora de equipos dentales y médicos. Nuestra misión es empoderar a los dentistas y médicos mexicanos para seguir creciendo, cumplir sus sueños y darles oportunidades únicas.
           </p>
           
           <div className="flex flex-col sm:flex-row justify-center gap-4 sm:gap-6">
