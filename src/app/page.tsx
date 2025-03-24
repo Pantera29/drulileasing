@@ -17,8 +17,8 @@ export default function LandingPage() {
         <Hero />
         <Benefits />
         {/* <EquipmentCategories /> */}
-        <HowItWorks />
         <Simulator />
+        <HowItWorks />
         {/* <Features /> */}
         <Testimonials />
         <CTA />

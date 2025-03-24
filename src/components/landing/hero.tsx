@@ -16,7 +16,7 @@ export function Hero() {
           </div>
           
           <h1 className="text-[2.75rem] sm:text-6xl md:text-7xl font-bold tracking-tight mb-6 leading-tight">
-            Equipamiento médico de vanguardia, <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-500"></span> 
+            Equipamiento médico, <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-500"></span> 
             <span className="block bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-500">a tu alcance</span>
           </h1>
           
@@ -24,16 +24,16 @@ export function Hero() {
           Druli es una arrendadora de equipos dentales y médicos. Nuestra misión es empoderar a los dentistas y médicos mexicanos para seguir creciendo, cumplir sus sueños y darles oportunidades únicas.
           </p>
           
-          <div className="flex flex-col sm:flex-row justify-center gap-4 sm:gap-6">
-            <Link href="/#simulator">
-              <Button size="lg" className="h-14 px-8 text-base font-semibold shadow-lg bg-gradient-to-r from-blue-600 to-blue-500 hover:shadow-blue-500/25 rounded-full flex items-center gap-2 group text-white">
+          <div className="flex flex-col sm:flex-row justify-center items-center gap-3 sm:gap-6">
+            <Link href="/#simulator" className="w-full sm:w-auto">
+              <Button size="lg" className="w-full sm:w-auto h-14 px-8 text-base font-semibold shadow-lg bg-gradient-to-r from-blue-600 to-blue-500 hover:shadow-blue-500/25 rounded-full flex items-center justify-center gap-2 group text-white">
                 Comenzar ahora
                 <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
               </Button>
             </Link>
-            <Link href="/#features">
-              <Button size="lg" variant="outline" className="h-14 px-8 text-base font-semibold rounded-full border-2 border-blue-200 text-blue-600 hover:border-blue-300 hover:bg-blue-50">
-                Ver características
+            <Link href="/#benefits" className="w-full sm:w-auto">
+              <Button size="lg" variant="outline" className="w-full sm:w-auto h-14 px-8 text-base font-semibold rounded-full border-2 border-blue-200 text-blue-600 hover:border-blue-300 hover:bg-blue-50">
+                Ver beneficios
               </Button>
             </Link>
           </div>

@@ -5,10 +5,10 @@ import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/co
 
 const navigation = [
   { name: "Beneficios", href: "/#benefits", icon: Zap },
-  { name: "Cómo funciona", href: "/#howItWorks", icon: Headset },
   { name: "Simulador", href: "/#simulator", icon: Calculator },
+  { name: "Proceso", href: "/#howItWorks", icon: Headset },
   { name: "Testimonios", href: "/#testimonials", icon: Star },
-  { name: "Contacto", href: "/#cta", icon: MessageSquare },
+  { name: "Contacto", href: "/#contacto", icon: MessageSquare },
 ];
 
 export function Header() {

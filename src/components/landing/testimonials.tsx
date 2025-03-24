@@ -25,7 +25,7 @@ const testimonials = [
 
 export function Testimonials() {
   return (
-    <section id="testimonios" className="py-24 relative">
+    <section id="testimonials" className="py-24 relative">
       <div className="absolute inset-0 bg-gradient-to-br from-blue-50/60 to-purple-50/30 pointer-events-none" />
       <div className="container relative">
         <div className="text-center mb-16">

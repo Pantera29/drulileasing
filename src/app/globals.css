@@ -211,3 +211,11 @@
 .slider-thumb:active {
   @apply cursor-grabbing scale-105 shadow-xl;
 }
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  scroll-behavior: smooth;
+}
