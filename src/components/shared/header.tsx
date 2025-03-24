@@ -1,7 +1,10 @@
+'use client';
+
 import { Menu, ChevronRight, Zap, Headset, Calculator, Star, MessageSquare } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { useRouter } from "next/navigation";
 
 const navigation = [
   { name: "Beneficios", href: "/#benefits", icon: Zap },
@@ -12,6 +15,17 @@ const navigation = [
 ];
 
 export function Header() {
+  const router = useRouter();
+
+  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    e.preventDefault();
+    const targetId = href.replace('/#', '');
+    const element = document.getElementById(targetId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
     <header className="sticky top-0 z-50 w-full border-b border-blue-100 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center">
@@ -27,6 +41,7 @@ export function Header() {
                 <Link
                   key={item.name}
                   href={item.href}
+                  onClick={(e) => handleNavClick(e, item.href)}
                   className="text-sm font-medium text-gray-500 transition-colors hover:text-blue-600"
                 >
                   {item.name}
@@ -72,6 +87,7 @@ export function Header() {
                         <Link
                           key={item.name}
                           href={item.href}
+                          onClick={(e) => handleNavClick(e, item.href)}
                           className="flex items-center justify-between py-4 border-b border-gray-100 hover:text-blue-600"
                         >
                           <div className="flex items-center gap-3">
@@ -85,14 +101,14 @@ export function Header() {
                   </nav>
                 </div>
                 
-                <div className="border-t border-gray-100 p-4 space-y-3">
-                  <Link href="/login" className="w-full">
-                    <Button variant="outline" className="w-full border border-gray-200 hover:border-blue-200 hover:text-blue-600">
+                <div className="p-6 space-y-4">
+                  <Link href="/login" className="w-full block">
+                    <Button variant="outline" className="w-full border border-gray-200 hover:border-blue-200 hover:text-blue-600 h-12">
                       Iniciar Sesión
                     </Button>
                   </Link>
-                  <Link href="/register" className="w-full">
-                    <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">
+                  <Link href="/register" className="w-full block">
+                    <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white h-12">
                       Nueva Solicitud
                     </Button>
                   </Link>
