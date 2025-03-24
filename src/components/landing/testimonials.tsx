@@ -1,26 +1,23 @@
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Card, CardFooter, CardHeader } from "@/components/ui/card";
 import { Star } from "lucide-react";
 
 const testimonials = [
   {
     name: "Dra. Mariana Guzmán",
     title: "Odontóloga Especialista",
-    image: "/doctors/doctor-1.jpg",
     content:
       "Gracias a Druli pude equipar completamente mi consultorio dental sin descapitalizarme. El proceso fue sencillo y la aprobación muy rápida.",
   },
   {
     name: "Dr. Carlos Mendoza",
     title: "Médico Internista",
-    image: "/doctors/doctor-2.jpg",
     content:
       "La flexibilidad de los planes de Druli me permitió adquirir un equipo de ultrasonido de última generación que hubiera sido imposible comprar de contado.",
   },
   {
     name: "Dra. Ana Sofía Ruiz",
     title: "Oftalmóloga",
-    image: "/doctors/doctor-3.jpg",
     content:
       "El servicio de mantenimiento incluido en mi contrato de arrendamiento me da tranquilidad. Siempre tengo mi equipo funcionando perfectamente.",
   },
@@ -58,7 +55,6 @@ export function Testimonials() {
               <CardFooter className="pt-4 border-t mt-4">
                 <div className="flex items-center gap-3">
                   <Avatar className="h-10 w-10 border-2 border-blue-100">
-                    <AvatarImage src={testimonial.image} alt={testimonial.name} />
                     <AvatarFallback className="bg-blue-50 text-blue-600">
                       {testimonial.name.split(' ').map(n => n[0]).join('')}
                     </AvatarFallback>

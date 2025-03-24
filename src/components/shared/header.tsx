@@ -1,14 +1,14 @@
-import { Menu } from "lucide-react";
+import { Menu, ChevronRight, Zap, Headset, Calculator, Star, MessageSquare } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 const navigation = [
-  { name: "Características", href: "/#features" },
-  { name: "Equipos", href: "/#equipment" },
-  { name: "Planes", href: "/#plans" },
-  { name: "Testimonios", href: "/#testimonios" },
-  { name: "Contacto", href: "/#contacto" },
+  { name: "Beneficios", href: "/#benefits", icon: Zap },
+  { name: "Cómo funciona", href: "/#howItWorks", icon: Headset },
+  { name: "Simulador", href: "/#simulator", icon: Calculator },
+  { name: "Testimonios", href: "/#testimonials", icon: Star },
+  { name: "Contacto", href: "/#cta", icon: MessageSquare },
 ];
 
 export function Header() {
@@ -52,30 +52,47 @@ export function Header() {
                   <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="flex flex-col">
-                <nav className="grid gap-6 py-6">
-                  {navigation.map((item) => (
-                    <Link
-                      key={item.name}
-                      href={item.href}
-                      className="text-sm font-medium transition-colors hover:text-blue-600"
-                    >
-                      {item.name}
-                    </Link>
-                  ))}
-                  <div className="flex flex-col gap-4 mt-4">
-                    <Link href="/login">
-                      <Button variant="ghost" className="w-full">
-                        Iniciar Sesión
-                      </Button>
-                    </Link>
-                    <Link href="/register">
-                      <Button className="w-full rounded-full bg-blue-600 hover:bg-blue-700 text-white">
-                        Registrarse
-                      </Button>
-                    </Link>
-                  </div>
-                </nav>
+              <SheetContent side="right" className="flex flex-col bg-white p-0 max-w-[320px] w-full">
+                <div className="border-b border-gray-100 p-4">
+                  <Link href="/" className="inline-flex items-center gap-2">
+                    <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-blue-600 to-blue-500 flex items-center justify-center text-white font-bold text-lg">D</div>
+                    <span className="font-bold text-xl">Druli</span>
+                  </Link>
+                </div>
+                
+                <div className="flex-1">
+                  <nav className="flex flex-col p-4">
+                    {navigation.map((item) => {
+                      const Icon = item.icon;
+                      return (
+                        <Link
+                          key={item.name}
+                          href={item.href}
+                          className="flex items-center justify-between py-4 border-b border-gray-100 hover:text-blue-600"
+                        >
+                          <div className="flex items-center gap-3">
+                            <Icon className="h-5 w-5 text-gray-400" />
+                            <span>{item.name}</span>
+                          </div>
+                          <ChevronRight className="h-4 w-4 text-gray-400" />
+                        </Link>
+                      );
+                    })}
+                  </nav>
+                </div>
+                
+                <div className="border-t border-gray-100 p-4 space-y-3">
+                  <Link href="/login" className="w-full">
+                    <Button variant="outline" className="w-full border border-gray-200 hover:border-blue-200 hover:text-blue-600">
+                      Iniciar Sesión
+                    </Button>
+                  </Link>
+                  <Link href="/register" className="w-full">
+                    <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">
+                      Registrarse
+                    </Button>
+                  </Link>
+                </div>
               </SheetContent>
             </Sheet>
           </div>
