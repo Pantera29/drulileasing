@@ -162,19 +162,20 @@ export function RegisterForm() {
             control={form.control}
             name="terms"
             render={({ field }) => (
-              <FormItem className="flex flex-row items-start space-x-3 space-y-0 py-2">
+              <FormItem className="flex flex-row items-start space-x-3 space-y-0 py-4">
                 <FormControl>
                   <Checkbox
                     checked={field.value}
                     onCheckedChange={field.onChange}
+                    className="border-2 border-gray-200 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
                   />
                 </FormControl>
                 <div className="space-y-1 leading-none">
-                  <FormLabel className="text-sm font-normal">
+                  <FormLabel className="text-sm text-gray-600">
                     Acepto los{" "}
                     <Link
                       href="/terms"
-                      className="text-primary hover:underline"
+                      className="text-blue-600 hover:text-blue-700 hover:underline"
                     >
                       términos y condiciones
                     </Link>
@@ -193,7 +194,7 @@ export function RegisterForm() {
 
           <Button 
             type="submit" 
-            className="w-full" 
+            className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-blue-500/25" 
             disabled={isLoading}
           >
             {isLoading ? "Registrando..." : "Registrarse"}

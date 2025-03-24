@@ -8,7 +8,9 @@ export default function DashboardPage() {
         <div className="container flex h-16 items-center justify-between">
           <div className="flex items-center gap-6">
             <Link href="/" className="flex items-center space-x-2">
-              <div className="h-6 w-6 rounded-full bg-primary"></div>
+              <div className="h-8 w-8 rounded-lg bg-blue-600 flex items-center justify-center">
+                <span className="text-white font-bold text-xl">D</span>
+              </div>
               <span className="font-bold text-xl">Druli</span>
             </Link>
             <span className="text-gray-500">|</span>
@@ -59,9 +61,6 @@ export default function DashboardPage() {
               <p className="text-gray-500 mt-2">
                 No tienes equipos arrendados actualmente.
               </p>
-              <Link href="#" className="text-primary hover:underline text-sm block mt-4">
-                Ver catálogo de equipos
-              </Link>
             </div>
             <div className="bg-white rounded-xl p-6 border shadow-sm">
               <h3 className="text-xl font-bold mb-2">Próximos pagos</h3>

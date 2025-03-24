@@ -54,16 +54,20 @@ export function LoginForm() {
 
     try {
       // Iniciar sesión con Supabase
-      const { error: signInError } = await supabase.auth.signInWithPassword({
+      const { error: signInError, data: signInData } = await supabase.auth.signInWithPassword({
         email: data.email,
         password: data.password,
       });
 
       if (signInError) throw signInError;
 
-      // Redireccionar al dashboard o a la página principal
-      router.push("/dashboard");
-      router.refresh();
+      // Verificar que el inicio de sesión fue exitoso
+      if (signInData?.user) {
+        // Redireccionar al dashboard usando router.replace
+        router.replace('/dashboard');
+      } else {
+        throw new Error("No se pudo iniciar sesión");
+      }
     } catch (error) {
       console.error("Error durante el inicio de sesión:", error);
       setError(
@@ -151,7 +155,7 @@ export function LoginForm() {
 
           <Button 
             type="submit" 
-            className="w-full" 
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white" 
             disabled={isLoading}
           >
             {isLoading ? "Iniciando sesión..." : "Iniciar sesión"}
