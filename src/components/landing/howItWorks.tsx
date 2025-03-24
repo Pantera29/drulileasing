@@ -63,27 +63,6 @@ export function HowItWorks() {
               </div>
             ))}
           </div>
-
-          <div className="mt-16 max-w-lg mx-auto text-center">
-            <div className="bg-white rounded-xl p-6 shadow-md border border-blue-100">
-              <div className="flex items-center mb-4 text-blue-600 gap-2 justify-center">
-                <CheckCircle2 className="h-5 w-5" />
-                <p className="text-sm font-medium">Proceso 100% digital</p>
-              </div>
-              <h3 className="text-2xl font-bold mb-4">
-                Comienza hoy mismo tu arrendamiento
-              </h3>
-              <p className="text-gray-500 mb-6">
-                El proceso completo, desde la solicitud hasta la entrega del equipo,
-                toma aproximadamente 3-5 días hábiles.
-              </p>
-              <Link href="/register">
-                <Button size="lg" className="rounded-full w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 shadow-lg hover:shadow-blue-500/25">
-                  Comenzar ahora
-                </Button>
-              </Link>
-            </div>
-          </div>
         </div>
       </div>
     </section>

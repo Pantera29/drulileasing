@@ -26,7 +26,7 @@ export function Hero() {
           
           <div className="flex flex-col sm:flex-row justify-center gap-4 sm:gap-6">
             <Link href="/#simulator">
-              <Button size="lg" className="h-14 px-8 text-base font-semibold shadow-lg bg-gradient-to-r from-blue-600 to-blue-500 hover:shadow-blue-500/25 rounded-full flex items-center gap-2 group">
+              <Button size="lg" className="h-14 px-8 text-base font-semibold shadow-lg bg-gradient-to-r from-blue-600 to-blue-500 hover:shadow-blue-500/25 rounded-full flex items-center gap-2 group text-white">
                 Comenzar ahora
                 <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
               </Button>

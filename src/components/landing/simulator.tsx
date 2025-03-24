@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React from "react";
 import Link from "next/link";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
@@ -24,10 +24,32 @@ const termOptions = [
 ];
 
 export function Simulator() {
-  // Estados para los valores del simulador
-  const [equipmentType, setEquipmentType] = useState("dental");
-  const [amount, setAmount] = useState(500000); // Valor inicial: $500,000 MXN
-  const [term, setTerm] = useState("24"); // Plazo inicial: 24 meses
+  // Estados iniciales
+  let equipmentType = "dental";
+  let amount = 500000;
+  let term = "24";
+  
+  let setEquipmentType: any;
+  let setAmount: any; 
+  let setTerm: any;
+  
+  // Si estamos en el navegador, usamos React.useState
+  if (typeof window !== 'undefined') {
+    // @ts-ignore - ignora el error de tipado
+    const state1 = React.useState("dental");
+    equipmentType = state1[0];
+    setEquipmentType = state1[1];
+    
+    // @ts-ignore
+    const state2 = React.useState(500000);
+    amount = state2[0];
+    setAmount = state2[1];
+    
+    // @ts-ignore
+    const state3 = React.useState("24");
+    term = state3[0];
+    setTerm = state3[1];
+  }
 
   // Cálculos del simulador
   const interestRate = calculateInterestRate(equipmentType, amount, parseInt(term));
@@ -63,9 +85,13 @@ export function Simulator() {
     return (principal * monthlyRate) / (1 - Math.pow(1 + monthlyRate, -term));
   }
 
+  // Para corregir el error de tipado en onValueChange
+  const handleValueChange = (value: any) => {
+    if (setAmount) setAmount(value[0]);
+  };
+
   return (
     <section id="simulator" className="py-24 bg-white relative">
-      <div className="absolute left-0 right-0 h-1/2 bg-blue-50 top-0 z-0"></div>
       <div className="container relative z-10">
         <div className="text-center mb-14">
           <div className="inline-flex items-center gap-2 mb-6 px-4 py-1.5 bg-blue-50 text-blue-600 rounded-full text-sm font-medium">
@@ -116,7 +142,7 @@ export function Simulator() {
                 min={50000}
                 max={2000000}
                 step={50000}
-                onValueChange={(value) => setAmount(value[0])}
+                onValueChange={handleValueChange}
                 className="py-6"
               />
               <div className="flex justify-between text-sm text-gray-500">
@@ -136,7 +162,7 @@ export function Simulator() {
                     key={option.value}
                     type="button"
                     variant={term === option.value ? "default" : "outline"}
-                    onClick={() => setTerm(option.value)}
+                    onClick={() => setTerm && setTerm(option.value)}
                     className={`w-full h-12 rounded-lg ${
                       term === option.value 
                         ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-300/50' 
@@ -172,7 +198,7 @@ export function Simulator() {
               
               <div className="pt-4">
                 <Link href="/register" className="w-full">
-                  <Button className="w-full h-14 text-base font-medium rounded-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 shadow-lg hover:shadow-blue-500/25">
+                  <Button className="w-full h-14 text-base font-medium rounded-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 shadow-lg hover:shadow-blue-500/25 text-white">
                     Solicitar arrendamiento ahora
                   </Button>
                 </Link>

@@ -41,7 +41,7 @@ export function Header() {
                 </Button>
               </Link>
               <Link href="/register">
-                <Button className="rounded-full bg-blue-600 hover:bg-blue-700 shadow-md">
+                <Button className="rounded-full bg-blue-600 hover:bg-blue-700 shadow-md text-white">
                   Registrarse
                 </Button>
               </Link>
@@ -70,7 +70,7 @@ export function Header() {
                       </Button>
                     </Link>
                     <Link href="/register">
-                      <Button className="w-full rounded-full bg-blue-600 hover:bg-blue-700">
+                      <Button className="w-full rounded-full bg-blue-600 hover:bg-blue-700 text-white">
                         Registrarse
                       </Button>
                     </Link>
