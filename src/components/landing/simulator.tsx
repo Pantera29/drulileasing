@@ -5,6 +5,8 @@ import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 // Plazos disponibles
 const termOptions = [
@@ -22,7 +24,6 @@ export function Simulator() {
   // Cálculos del simulador
   const interestRate = calculateInterestRate(amount, parseInt(term));
   const monthlyPayment = calculateMonthlyPayment(amount, interestRate, parseInt(term));
-  const totalPayment = monthlyPayment * parseInt(term);
 
   // Función para calcular la tasa de interés basada en los parámetros
   function calculateInterestRate(amount: number, term: number): number {
@@ -65,82 +66,83 @@ export function Simulator() {
         </div>
 
         <Card className="max-w-3xl mx-auto shadow-2xl border border-gray-100 overflow-hidden">
-          <CardContent className="p-8 md:p-10 space-y-8">
-            {/* Slider para el monto */}
-            <div className="space-y-5 pt-2">
-              <div className="flex justify-between">
-                <label className="text-base font-medium leading-none">
-                  Monto del equipo
-                </label>
-                <span className="text-base font-bold text-blue-600">
-                  ${amount.toLocaleString('es-MX')} MXN
-                </span>
-              </div>
-              <Slider
-                value={[amount]}
-                min={50000}
-                max={2000000}
-                step={50000}
-                onValueChange={handleValueChange}
-                className="py-6"
-              />
-              <div className="flex justify-between text-sm text-gray-500">
-                <span>$50,000</span>
-                <span>$2,000,000</span>
-              </div>
-            </div>
-
-            {/* Botones para el plazo */}
-            <div className="space-y-3 pt-2">
-              <label className="text-base font-medium leading-none">
-                Plazo del arrendamiento
-              </label>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {termOptions.map((option) => (
-                  <Button
-                    key={option.value}
-                    type="button"
-                    variant={term === option.value ? "default" : "outline"}
-                    onClick={() => setTerm(option.value)}
-                    className={`w-full h-12 rounded-lg ${
-                      term === option.value 
-                        ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-300/50' 
-                        : 'border-gray-200 text-gray-700 hover:border-blue-200 hover:text-blue-600'
-                    }`}
+          <CardContent className="p-8 md:p-10">
+            <div className="space-y-8">
+              {/* Monto del equipo */}
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <Label className="text-2xl font-medium">Monto del equipo</Label>
+                  <span className="text-xl font-semibold text-blue-600">${amount.toLocaleString()}</span>
+                </div>
+                <div className="px-1">
+                  <Slider
+                    className="slider"
+                    min={10000}
+                    max={1000000}
+                    step={10000}
+                    value={[amount]}
+                    onValueChange={([value]) => setAmount(value)}
                   >
-                    {option.label}
-                  </Button>
-                ))}
+                    <div className="slider-track">
+                      <div 
+                        className="slider-range" 
+                        style={{ 
+                          width: `${((amount - 10000) / (990000)) * 100}%` 
+                        }} 
+                      />
+                    </div>
+                    <div className="slider-thumb" />
+                  </Slider>
+                  <div className="flex justify-between mt-2 text-sm text-gray-500">
+                    <span>$10,000</span>
+                    <span>$1,000,000</span>
+                  </div>
+                </div>
               </div>
-            </div>
 
-            {/* Resultados */}
-            <div className="bg-blue-50 rounded-xl p-6 md:p-8 mt-8 space-y-5 border border-blue-200">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div>
-                  <p className="text-sm font-medium text-gray-500 mb-1">Pago mensual</p>
-                  <p className="text-3xl font-bold text-blue-600">
+              {/* Botones para el plazo */}
+              <div className="space-y-4 pt-2">
+                <label className="text-2xl font-medium leading-none block mb-4">
+                  Plazo del arrendamiento
+                </label>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {termOptions.map((option) => (
+                    <Button
+                      key={option.value}
+                      type="button"
+                      variant={term === option.value ? "default" : "outline"}
+                      onClick={() => setTerm(option.value)}
+                      className={`w-full h-12 rounded-lg ${
+                        term === option.value 
+                          ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-300/50' 
+                          : 'border-gray-200 text-gray-700 hover:border-blue-200 hover:text-blue-600'
+                      }`}
+                    >
+                      {option.label}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Resultados */}
+              <div className="bg-blue-50 rounded-xl p-6 md:p-8 mt-8 space-y-6 border border-blue-200">
+                <div className="text-center">
+                  <p className="text-sm font-medium text-gray-500 mb-1">Tu pago mensual sería de</p>
+                  <p className="text-5xl font-bold text-blue-600 mb-1">
                     ${Math.round(monthlyPayment).toLocaleString('es-MX')}
                   </p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-500 mb-1">Tasa anual</p>
-                  <p className="text-3xl font-bold">{(interestRate * 100).toFixed(1)}%</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-500 mb-1">Total a pagar</p>
-                  <p className="text-3xl font-bold">
-                    ${Math.round(totalPayment).toLocaleString('es-MX')}
+                  <p className="text-sm text-gray-500">
+                    Tasa anual: {(interestRate * 100).toFixed(1)}%
                   </p>
                 </div>
-              </div>
-              
-              <div className="pt-4">
-                <Link href="/register" className="w-full">
-                  <Button className="w-full h-14 text-base font-medium rounded-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 shadow-lg hover:shadow-blue-500/25 text-white">
-                    Solicitar arrendamiento ahora
-                  </Button>
-                </Link>
+                
+                <div className="pt-4">
+                  <Link href="/register" className="w-full">
+                    <Button className="w-full h-14 text-base font-medium rounded-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 shadow-lg hover:shadow-blue-500/25 text-white">
+                      Solicitar arrendamiento ahora
+                    </Button>
+                  </Link>
+                </div>
               </div>
             </div>
           </CardContent>
