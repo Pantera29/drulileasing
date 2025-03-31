@@ -71,7 +71,7 @@ export function FinancialForm({
         setSaveSuccess(true);
         // Esperamos un momento antes de navegar al siguiente paso
         setTimeout(() => {
-          router.push(`/step/4`);
+          router.push(`/application/step/4`);
         }, 500);
         return true;
       } else {

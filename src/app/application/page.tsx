@@ -14,6 +14,6 @@ export const generateMetadata = async () => {
 };
 
 export default function ApplicationPage() {
-  // Simplemente redirigir al primer paso
-  redirect('/step/1');
+  // Redirigir al primer paso dentro de application
+  redirect('/application/step/1');
 } 

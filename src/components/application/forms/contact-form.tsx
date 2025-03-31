@@ -52,7 +52,7 @@ export function ContactForm({ initialData, onSubmit, applicationId }: ContactFor
         setSaveSuccess(true);
         // Esperamos un momento antes de navegar al siguiente paso
         setTimeout(() => {
-          router.push(`/step/3`);
+          router.push(`/application/step/3`);
         }, 500);
         return true;
       } else {

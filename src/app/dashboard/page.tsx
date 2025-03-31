@@ -147,7 +147,7 @@ export default function DashboardPage() {
               equipos y gestionar tus datos personales.
             </p>
             <div className="flex flex-wrap gap-4">
-              <Link href="/step/1">
+              <Link href="/application/step/1">
                 <Button>
                   Nueva solicitud
                 </Button>
@@ -173,7 +173,7 @@ export default function DashboardPage() {
                   </p>
                 </>
               )}
-              <Link href="/step/1" className="text-primary hover:underline text-sm block mt-4">
+              <Link href="/application/step/1" className="text-primary hover:underline text-sm block mt-4">
                 Crear nueva solicitud
               </Link>
             </div>

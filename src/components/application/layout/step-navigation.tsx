@@ -31,7 +31,7 @@ export function StepNavigation({
       if (saveSuccess) {
         if (currentStep < totalSteps) {
           console.log(`Navegando al paso ${currentStep + 1}`);
-          router.push(`/step/${currentStep + 1}`);
+          router.push(`/application/step/${currentStep + 1}`);
           // No reseteamos isNavigating porque vamos a navegar a otra página
           return;
         }
@@ -77,7 +77,7 @@ export function StepNavigation({
       <div>
         {currentStep > 1 && (
           <Link
-            href={`/step/${currentStep - 1}`}
+            href={`/application/step/${currentStep - 1}`}
             className={`inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 ${isDisabled ? 'opacity-50 pointer-events-none' : ''}`}
             onClick={(e) => {
               if (isDisabled) {

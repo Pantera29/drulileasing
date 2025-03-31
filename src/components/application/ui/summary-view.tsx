@@ -86,7 +86,7 @@ export function SummaryView({ data }: SummaryViewProps) {
         <div className="flex items-center justify-between p-4 bg-gray-50 border-b">
           <h3 className="text-sm font-medium text-gray-900">Datos Personales</h3>
           <Link 
-            href="/step/1" 
+            href="/application/step/1" 
             className="text-sm text-blue-600 hover:text-blue-500"
           >
             Editar
@@ -129,7 +129,7 @@ export function SummaryView({ data }: SummaryViewProps) {
         <div className="flex items-center justify-between p-4 bg-gray-50 border-b">
           <h3 className="text-sm font-medium text-gray-900">Información de Contacto</h3>
           <Link 
-            href="/step/2" 
+            href="/application/step/2" 
             className="text-sm text-blue-600 hover:text-blue-500"
           >
             Editar
@@ -182,7 +182,7 @@ export function SummaryView({ data }: SummaryViewProps) {
         <div className="flex items-center justify-between p-4 bg-gray-50 border-b">
           <h3 className="text-sm font-medium text-gray-900">Información Financiera</h3>
           <Link 
-            href="/step/3" 
+            href="/application/step/3" 
             className="text-sm text-blue-600 hover:text-blue-500"
           >
             Editar
@@ -235,7 +235,7 @@ export function SummaryView({ data }: SummaryViewProps) {
         <div className="flex items-center justify-between p-4 bg-gray-50 border-b">
           <h3 className="text-sm font-medium text-gray-900">Equipo de Interés</h3>
           <Link 
-            href="/step/4" 
+            href="/application/step/4" 
             className="text-sm text-blue-600 hover:text-blue-500"
           >
             Editar

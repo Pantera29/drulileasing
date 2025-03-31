@@ -5,31 +5,31 @@ import { usePathname } from 'next/navigation';
 
 // Definición de los pasos del formulario
 const steps = [
-  { 
-    id: 1, 
-    name: 'Datos Personales', 
-    path: '/step/1'
+  {
+    id: 1,
+    name: 'Datos personales',
+    path: '/application/step/1'
   },
-  { 
-    id: 2, 
-    name: 'Contacto', 
-    path: '/step/2'
+  {
+    id: 2,
+    name: 'Datos de contacto',
+    path: '/application/step/2'
   },
-  { 
-    id: 3, 
-    name: 'Información Financiera', 
-    path: '/step/3'
+  {
+    id: 3,
+    name: 'Datos financieros',
+    path: '/application/step/3'
   },
-  { 
-    id: 4, 
-    name: 'Equipo de Interés', 
-    path: '/step/4'
+  {
+    id: 4,
+    name: 'Equipo',
+    path: '/application/step/4'
   },
-  { 
-    id: 5, 
-    name: 'Confirmación', 
-    path: '/step/5'
-  },
+  {
+    id: 5,
+    name: 'Confirmación',
+    path: '/application/step/5'
+  }
 ];
 
 export function ProgressBar() {

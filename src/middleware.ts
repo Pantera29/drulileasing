@@ -53,11 +53,18 @@ export async function middleware(request: NextRequest) {
     );
   }
 
-  // Agregar redirección desde /application a /step/1
+  // Actualizar la redirección
   if (url.pathname === '/application') {
-    console.log('Middleware: Redirigiendo /application a /step/1');
+    console.log('Middleware: Redirigiendo /application a /application/step/1');
     // La URL debe ser completa, no solo el pathname
-    return NextResponse.redirect(new URL('/step/1', request.url));
+    return NextResponse.redirect(new URL('/application/step/1', request.url));
+  }
+
+  // Redirigir las rutas antiguas de step a application/step
+  if (url.pathname.startsWith('/step/')) {
+    const newPath = url.pathname.replace('/step/', '/application/step/');
+    console.log(`Middleware: Redirigiendo ${url.pathname} a ${newPath}`);
+    return NextResponse.redirect(new URL(newPath, request.url));
   }
 
   // En cualquier otro caso, continuar con la solicitud
@@ -70,12 +77,14 @@ export const config = {
     /*
      * Configuración de matcher:
      * - Correspondencia con todas las rutas de dashboard
-     * - Correspondencia con todas las rutas de step
+     * - Correspondencia con todas las rutas de application/step
+     * - Correspondencia con las rutas antiguas de step para redirección
      * - Correspondencia con las rutas de autenticación
      * - Correspondencia con la ruta de application
      * - Correspondencia con la ruta de app-routes
      */
     '/dashboard/:path*',
+    '/application/step/:path*',
     '/step/:path*',
     '/login',
     '/register',

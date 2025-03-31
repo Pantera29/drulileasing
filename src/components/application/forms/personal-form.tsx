@@ -80,7 +80,7 @@ export function PersonalForm({ initialData, onSubmit, applicationId }: PersonalF
         setSaveSuccess(true);
         // Esperamos un momento antes de navegar al siguiente paso
         setTimeout(() => {
-          router.push(`/step/2`);
+          router.push(`/application/step/2`);
         }, 500);
         return true;
       } else {

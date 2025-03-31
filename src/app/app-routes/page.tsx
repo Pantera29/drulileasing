@@ -14,6 +14,6 @@ export const generateMetadata = async () => {
 };
 
 export default function AppRoutesPage() {
-  // Simplemente redirigir al primer paso
-  redirect('/step/1');
+  // Redirigir al primer paso dentro de application
+  redirect('/application/step/1');
 }

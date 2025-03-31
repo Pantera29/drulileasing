@@ -82,7 +82,7 @@ export function EquipmentForm({
         // Navegar después de un breve retraso
         setTimeout(() => {
           console.log('Navegando al siguiente paso...');
-          router.push('/step/5');
+          router.push('/application/step/5');
         }, 1500);
         
         return true;
