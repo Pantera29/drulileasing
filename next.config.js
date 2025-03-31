@@ -9,18 +9,19 @@ const nextConfig = {
     // Ignorar errores de TypeScript durante el build
     ignoreBuildErrors: true
   },
-  // No hacer optimizaciones de generación estática para rutas dinámicas
+  // Configurar timeout para generación estática
   staticPageGenerationTimeout: 1000,
-  // Configuración específica para forzar modo dinámico en ciertas rutas
+  // Forzar que todas las rutas sean dinámicas para evitar problemas con cookies()
   experimental: {
     // No mostrar advertencias para CSR bailout
     missingSuspenseWithCSRBailout: false,
-    // Usar el nuevo sistema de compilación
-    serverActions: true
+    // Habilitar server actions
+    serverActions: {
+      bodySizeLimit: '2mb'
+    }
   },
-  // Ignorar las referencias a cookies() durante el build
+  // Ignorar las referencias a cookies durante el build
   webpack: (config, { isServer }) => {
-    // Configuraciones adicionales para webpack
     if (isServer) {
       config.externals = [...config.externals, 'cookies']
     }

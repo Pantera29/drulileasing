@@ -1,6 +1,9 @@
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
+// IMPORTANTE: Esta función usa cookies() de next/headers
+// Por lo que todas las rutas que la usen deben tener export const dynamic = 'force-dynamic'
+// o estar en un layout con esa configuración
 export async function createClient() {
   const cookieStore = await cookies();
 
