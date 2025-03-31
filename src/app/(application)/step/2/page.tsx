@@ -2,7 +2,6 @@ import React from 'react';
 import { ContactForm } from '@/components/application/forms/contact-form';
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import { cookies } from 'next/headers';
 import { type ContactFormData } from '@/lib/schemas/contact-schema';
 
 export default async function ContactInfoPage() {

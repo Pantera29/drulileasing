@@ -2,7 +2,6 @@ import React from 'react';
 import { ConfirmationForm } from '@/components/application/forms/confirmation-form';
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import { cookies } from 'next/headers';
 
 export default async function ConfirmationPage() {
   console.log('Inicializando ConfirmationPage');

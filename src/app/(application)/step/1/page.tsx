@@ -2,7 +2,6 @@ import React from 'react';
 import { PersonalForm } from '@/components/application/forms/personal-form';
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import { cookies } from 'next/headers';
 import { type PersonalFormData } from '@/lib/schemas/personal-schema';
 
 // Definir la estructura de la aplicación para evitar errores de tipo

@@ -2,7 +2,6 @@ import React from 'react';
 import { FinancialForm } from '@/components/application/forms/financial-form';
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import { cookies } from 'next/headers';
 import { type FinancialFormData } from '@/lib/schemas/financial-schema';
 
 export default async function FinancialInfoPage() {
