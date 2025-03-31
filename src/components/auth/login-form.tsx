@@ -37,7 +37,6 @@ export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
-  const [isCleaningSession, setIsCleaningSession] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [supabase] = useState(() => 
     createBrowserClient(
@@ -86,43 +85,6 @@ export function LoginForm() {
       remember: false,
     },
   });
-
-  // Función para forzar la eliminación de sesiones
-  const handleForceCleanSession = async () => {
-    setIsCleaningSession(true);
-    setError(null);
-    
-    try {
-      // Intentar cerrar la sesión en Supabase
-      await supabase.auth.signOut({ scope: 'global' });
-      
-      // Limpiar localStorage
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && (key.includes('supabase') || key.includes('sb-'))) {
-          localStorage.removeItem(key);
-        }
-      }
-      
-      // Limpiar cookies
-      const cookies = document.cookie.split(';');
-      for (let i = 0; i < cookies.length; i++) {
-        const cookie = cookies[i];
-        const [name] = cookie.trim().split('=');
-        if (name && (name.includes('supabase') || name.includes('sb-'))) {
-          document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
-        }
-      }
-      
-      // Mostrar mensaje de éxito
-      setError("Sesión limpiada. Ahora puedes intentar iniciar sesión nuevamente.");
-    } catch (error) {
-      console.error("Error al limpiar la sesión:", error);
-      setError("Error al limpiar la sesión. Intenta recargar la página.");
-    } finally {
-      setIsCleaningSession(false);
-    }
-  };
 
   // Función para manejar el envío del formulario
   async function onSubmit(data: LoginFormValues) {
@@ -262,22 +224,6 @@ export function LoginForm() {
         <Link href="/register" className="text-primary hover:underline">
           Regístrate ahora
         </Link>
-      </div>
-
-      <div className="border-t pt-4 mt-4">
-        <p className="text-xs text-gray-500 mb-2">
-          ¿Problemas para iniciar sesión? Prueba a limpiar tu sesión:
-        </p>
-        <Button 
-          type="button" 
-          variant="outline"
-          size="sm"
-          className="w-full text-xs" 
-          disabled={isCleaningSession}
-          onClick={handleForceCleanSession}
-        >
-          {isCleaningSession ? "Limpiando sesión..." : "Forzar limpieza de sesión"}
-        </Button>
       </div>
     </div>
   );
