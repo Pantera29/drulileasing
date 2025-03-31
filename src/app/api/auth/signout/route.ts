@@ -14,7 +14,10 @@ export async function POST() {
   const supabase = await createClient()
   await supabase.auth.signOut()
   
-  return NextResponse.json({
-    success: true
-  })
+  // Redirigir a la página de login en lugar de devolver JSON
+  return NextResponse.redirect(new URL('/login?msg=signed_out', 
+    process.env.NODE_ENV === 'production' 
+      ? 'https://drulileasing.vercel.app' 
+      : 'http://localhost:3000'
+  ))
 } 

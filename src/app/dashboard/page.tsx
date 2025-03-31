@@ -119,11 +119,36 @@ export default function DashboardPage() {
             <h1 className="text-lg font-medium">Panel de Cliente</h1>
           </div>
           <div>
-            <form action="/api/auth/signout" method="post">
-              <Button variant="outline" size="sm" type="submit">
-                Cerrar sesión
-              </Button>
-            </form>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => {
+                // Crear una función para manejar el cierre de sesión
+                const signOut = async () => {
+                  try {
+                    // Hacer la solicitud POST a la API
+                    const response = await fetch('/api/auth/signout', {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                      },
+                    });
+                    
+                    // Si la respuesta es exitosa, redirigir a la página de login
+                    if (response.ok) {
+                      window.location.href = '/login?msg=signed_out';
+                    }
+                  } catch (error) {
+                    console.error('Error al cerrar sesión:', error);
+                  }
+                };
+                
+                // Llamar a la función
+                signOut();
+              }}
+            >
+              Cerrar sesión
+            </Button>
           </div>
         </div>
       </header>
