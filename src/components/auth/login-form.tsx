@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -17,7 +17,8 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { supabase } from "@/lib/supabase";
+import { createBrowserClient } from '@supabase/ssr';
+import { AlertCircle } from "lucide-react";
 
 // Esquema de validación
 const loginSchema = z.object({
@@ -34,8 +35,47 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 
 export function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
+  const [isCleaningSession, setIsCleaningSession] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [supabase] = useState(() => 
+    createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    )
+  );
+
+  // Obtener el returnUrl si existe para redireccionar después del login
+  const returnUrl = searchParams.get('returnUrl') || '/dashboard';
+  const errorParam = searchParams.get('error');
+
+  // Comprobar si hay una sesión activa al cargar
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        router.replace(returnUrl);
+      }
+    };
+    
+    checkSession();
+
+    // Mostrar error si viene de una redirección
+    if (errorParam) {
+      const errorMessages: Record<string, string> = {
+        'session_error': 'Error al verificar la sesión. Por favor, inicia sesión nuevamente.',
+        'no_session': 'Tu sesión ha expirado. Por favor, inicia sesión nuevamente.',
+        'invalid_user': 'Usuario no válido. Por favor, inicia sesión nuevamente.',
+        'user_check_error': 'Error al verificar el usuario. Por favor, inicia sesión nuevamente.',
+        'check_auth_error': 'Error al verificar la autenticación. Por favor, inicia sesión nuevamente.',
+        'signed_out': 'Has cerrado sesión correctamente.',
+        'event_no_session': 'Tu sesión ha finalizado. Por favor, inicia sesión nuevamente.',
+      };
+      
+      setError(errorMessages[errorParam] || 'Error de autenticación. Por favor, inicia sesión nuevamente.');
+    }
+  }, [router, supabase, returnUrl, errorParam]);
 
   // Configurar el formulario
   const form = useForm<LoginFormValues>({
@@ -47,24 +87,71 @@ export function LoginForm() {
     },
   });
 
+  // Función para forzar la eliminación de sesiones
+  const handleForceCleanSession = async () => {
+    setIsCleaningSession(true);
+    setError(null);
+    
+    try {
+      // Intentar cerrar la sesión en Supabase
+      await supabase.auth.signOut({ scope: 'global' });
+      
+      // Limpiar localStorage
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && (key.includes('supabase') || key.includes('sb-'))) {
+          localStorage.removeItem(key);
+        }
+      }
+      
+      // Limpiar cookies
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i];
+        const [name] = cookie.trim().split('=');
+        if (name && (name.includes('supabase') || name.includes('sb-'))) {
+          document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+        }
+      }
+      
+      // Mostrar mensaje de éxito
+      setError("Sesión limpiada. Ahora puedes intentar iniciar sesión nuevamente.");
+    } catch (error) {
+      console.error("Error al limpiar la sesión:", error);
+      setError("Error al limpiar la sesión. Intenta recargar la página.");
+    } finally {
+      setIsCleaningSession(false);
+    }
+  };
+
   // Función para manejar el envío del formulario
   async function onSubmit(data: LoginFormValues) {
     setIsLoading(true);
     setError(null);
 
     try {
+      console.log('Intentando iniciar sesión con email:', data.email);
+      
       // Iniciar sesión con Supabase
       const { error: signInError, data: signInData } = await supabase.auth.signInWithPassword({
         email: data.email,
         password: data.password,
       });
 
-      if (signInError) throw signInError;
+      if (signInError) {
+        console.error('Error de Supabase al iniciar sesión:', signInError);
+        throw signInError;
+      }
 
       // Verificar que el inicio de sesión fue exitoso
       if (signInData?.user) {
-        // Redireccionar al dashboard usando router.replace
-        router.replace('/dashboard');
+        console.log('Inicio de sesión exitoso para el usuario:', signInData.user.id);
+        
+        // Esperar un momento para asegurar que la sesión se haya propagado
+        setTimeout(() => {
+          // Redireccionar a la URL de retorno o al dashboard
+          router.push(returnUrl);
+        }, 500);
       } else {
         throw new Error("No se pudo iniciar sesión");
       }
@@ -88,6 +175,13 @@ export function LoginForm() {
           Ingresa tus credenciales para acceder a tu cuenta
         </p>
       </div>
+
+      {errorParam && (
+        <div className="bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-md flex items-start space-x-2">
+          <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5" />
+          <p className="text-sm">{error}</p>
+        </div>
+      )}
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -147,7 +241,7 @@ export function LoginForm() {
             )}
           />
 
-          {error && (
+          {error && !errorParam && (
             <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm">
               {error}
             </div>
@@ -168,6 +262,22 @@ export function LoginForm() {
         <Link href="/register" className="text-primary hover:underline">
           Regístrate ahora
         </Link>
+      </div>
+
+      <div className="border-t pt-4 mt-4">
+        <p className="text-xs text-gray-500 mb-2">
+          ¿Problemas para iniciar sesión? Prueba a limpiar tu sesión:
+        </p>
+        <Button 
+          type="button" 
+          variant="outline"
+          size="sm"
+          className="w-full text-xs" 
+          disabled={isCleaningSession}
+          onClick={handleForceCleanSession}
+        >
+          {isCleaningSession ? "Limpiando sesión..." : "Forzar limpieza de sesión"}
+        </Button>
       </div>
     </div>
   );
