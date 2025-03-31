@@ -1,6 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // Tratar directorios con paréntesis normalmente
+  transpilePackages: [],
   eslint: {
     // Ignorar errores durante el build
     ignoreDuringBuilds: true
@@ -11,10 +13,8 @@ const nextConfig = {
   },
   // Configurar timeout para generación estática
   staticPageGenerationTimeout: 1000,
-  // Forzar que todas las rutas sean dinámicas para evitar problemas con cookies()
+  // Forzar que todas las rutas sean dinámicas
   experimental: {
-    // No mostrar advertencias para CSR bailout
-    missingSuspenseWithCSRBailout: false,
     // Habilitar server actions
     serverActions: {
       bodySizeLimit: '2mb'
