@@ -73,6 +73,7 @@ export const config = {
      * - Correspondencia con todas las rutas de step
      * - Correspondencia con las rutas de autenticación
      * - Correspondencia con la ruta de application
+     * - Correspondencia con la ruta de app-routes
      */
     '/dashboard/:path*',
     '/step/:path*',
@@ -80,5 +81,6 @@ export const config = {
     '/register',
     '/reset-password',
     '/application',
+    '/app-routes',
   ],
 }; 
