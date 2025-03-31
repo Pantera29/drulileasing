@@ -6,7 +6,8 @@ import { cookies } from 'next/headers';
 import { type ContactFormData } from '@/lib/schemas/contact-schema';
 
 export default async function ContactInfoPage() {
-  const supabase = createClient();
+  console.log('Inicializando ContactInfoPage');
+  const supabase = await createClient();
   
   // Verificar si el usuario está autenticado
   const { data: { session } } = await supabase.auth.getSession();
@@ -49,7 +50,7 @@ export default async function ContactInfoPage() {
     'use server';
     
     const cookieStore = cookies();
-    const supabase = createClient();
+    const supabase = await createClient();
     
     try {
       const { data: { session } } = await supabase.auth.getSession();

@@ -5,7 +5,8 @@ import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 
 export default async function ConfirmationPage() {
-  const supabase = createClient();
+  console.log('Inicializando ConfirmationPage');
+  const supabase = await createClient();
   
   // Verificar si el usuario está autenticado
   const { data: { session } } = await supabase.auth.getSession();
@@ -82,8 +83,9 @@ export default async function ConfirmationPage() {
   }) {
     'use server';
     
+    console.log('Finalizando aplicación');
     const cookieStore = cookies();
-    const supabase = createClient();
+    const supabase = await createClient();
     
     try {
       console.log('Finalizando solicitud, datos recibidos:', JSON.stringify(data));
@@ -91,12 +93,12 @@ export default async function ConfirmationPage() {
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
-        console.error('No hay sesión activa');
+        console.error('No hay sesión de usuario al finalizar la solicitud');
         return false;
       }
       
       // Obtener la aplicación actual
-      const { data: application } = await supabase
+      const { data: application, error: fetchError } = await supabase
         .from('credit_applications')
         .select('id')
         .eq('user_id', session.user.id)
@@ -105,15 +107,12 @@ export default async function ConfirmationPage() {
         .limit(1)
         .single();
       
-      if (!application) {
-        console.error('No se encontró una aplicación incompleta');
+      if (fetchError || !application) {
+        console.error('Error al obtener la aplicación actual:', fetchError);
         return false;
       }
       
-      console.log('Actualizando estado de la aplicación:', application.id);
-      
-      // Actualizar estado de la solicitud a "pending"
-      // Ahora incluimos los campos credit_check_authorized y terms_accepted que ya existen en la tabla
+      // Actualizar el estado de la aplicación a 'pending'
       const { error: updateError } = await supabase
         .from('credit_applications')
         .update({
@@ -123,16 +122,15 @@ export default async function ConfirmationPage() {
           updated_at: new Date().toISOString(),
         })
         .eq('id', application.id);
-        
+      
       if (updateError) {
-        console.error('Error al finalizar la solicitud:', updateError);
+        console.error('Error al actualizar el estado de la aplicación:', updateError);
         return false;
       }
       
-      console.log('Solicitud finalizada exitosamente');
       return true;
     } catch (error) {
-      console.error('Error al finalizar la solicitud:', error);
+      console.error('Error inesperado al finalizar la solicitud:', error);
       return false;
     }
   }

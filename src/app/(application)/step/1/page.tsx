@@ -12,7 +12,9 @@ interface Application {
 }
 
 export default async function PersonalDataPage() {
-  const supabase = createClient();
+  const cookieStore = cookies();
+  console.log('Inicializando PersonalInfoPage');
+  const supabase = await createClient();
   
   try {
     // Verificar si el usuario está autenticado
@@ -123,7 +125,7 @@ export default async function PersonalDataPage() {
       'use server';
       
       const cookieStore = cookies();
-      const supabase = createClient();
+      const supabase = await createClient();
       
       try {
         const { data: { session } } = await supabase.auth.getSession();

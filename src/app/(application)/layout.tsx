@@ -10,7 +10,7 @@ export default async function Layout({
 }) {
   try {
     console.log('Inicializando layout de application');
-    const supabase = createClient();
+    const supabase = await createClient();
     
     // Verificar si el usuario está autenticado
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();

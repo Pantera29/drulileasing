@@ -2,80 +2,63 @@ import React from 'react';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 
-export default async function ApplicationHomePage() {
-  const supabase = createClient();
+export default async function ApplicationPage() {
+  console.log('Iniciando ApplicationPage');
+  const supabase = await createClient();
   
-  // Verificar si el usuario está autenticado
+  console.log('Verificando sesión en ApplicationPage...');
   const { data: { session } } = await supabase.auth.getSession();
   
+  // Si no hay sesión, no debería llegar aquí (middleware debe redirigir)
+  // pero por si acaso
   if (!session) {
-    redirect('/login');
+    console.log('No hay sesión, redirigiendo a login desde ApplicationPage');
+    redirect('/login?error=no_session');
   }
   
-  // Verificar si el usuario tiene una solicitud incompleta
-  const { data: incompleteApplication } = await supabase
+  console.log('Verificando si el usuario ya tiene una solicitud incompleta...');
+  
+  // Verificamos si el usuario ya tiene una solicitud incompleta
+  const { data: existingApplications, error: appError } = await supabase
     .from('credit_applications')
-    .select('id, created_at, updated_at')
+    .select('id')
     .eq('user_id', session.user.id)
     .eq('application_status', 'incomplete')
-    .order('updated_at', { ascending: false })
-    .limit(1)
-    .single();
-    
-  // Si hay una solicitud incompleta, redirigir al último paso conocido
-  if (incompleteApplication) {
-    // Verificar en qué paso se quedó
-    const steps = [
-      { table: 'profiles', id_field: 'profile_id' },
-      { table: 'contact_info', id_field: 'contact_id' },
-      { table: 'financial_info', id_field: 'financial_id' },
-      { table: 'equipment_requests', id_field: 'equipment_id' }
-    ];
-    
-    const { data: application } = await supabase
-      .from('credit_applications')
-      .select('profile_id, contact_id, financial_id, equipment_id')
-      .eq('id', incompleteApplication.id)
-      .single();
-      
-    // Determinar el último paso completado
-    let lastCompletedStep = 0;
-    for (let i = 0; i < steps.length; i++) {
-      const field = steps[i].id_field as keyof typeof application;
-      if (application && application[field]) {
-        lastCompletedStep = i + 1;
-      } else {
-        break;
-      }
-    }
-    
-    // Redirigir al siguiente paso después del último completado
-    const nextStep = lastCompletedStep + 1;
-    if (nextStep <= 5) {
-      redirect(`/step/${nextStep}`);
-    } else {
-      redirect('/step/5'); // Si todos están completos, ir a la confirmación
-    }
-  } else {
-    // Crear una nueva solicitud de crédito
-    const { data: newApplication, error } = await supabase
-      .from('credit_applications')
-      .insert({
-        user_id: session.user.id,
-        application_status: 'incomplete'
-      })
-      .select('id')
-      .single();
-      
-    if (error) {
-      console.error('Error al crear una nueva solicitud:', error);
-      throw new Error('No se pudo iniciar una nueva solicitud de crédito');
-    }
-    
-    // Redirigir al primer paso
+    .order('created_at', { ascending: false })
+    .limit(1);
+  
+  if (appError) {
+    console.error('Error al verificar solicitudes existentes:', appError);
+    // En caso de error, es mejor continuar y crear una nueva
+    // pero dejamos registro del error
+  }
+  
+  // Si hay una solicitud incompleta, redirigir al primer paso
+  if (existingApplications && existingApplications.length > 0) {
+    console.log('Usuario tiene una solicitud incompleta, redirigiendo al paso 1');
     redirect('/step/1');
   }
   
-  // Esta parte no debería ejecutarse debido a las redirecciones anteriores
-  return null;
+  console.log('Creando nueva solicitud para el usuario:', session.user.id);
+  
+  // Si llegamos aquí, el usuario no tiene solicitudes incompletas
+  // Creamos una nueva solicitud de crédito
+  const { data: newApplication, error: createError } = await supabase
+    .from('credit_applications')
+    .insert({
+      user_id: session.user.id,
+      application_status: 'incomplete',
+    })
+    .select('id')
+    .single();
+  
+  if (createError) {
+    console.error('Error al crear nueva solicitud:', createError);
+    throw new Error('No se pudo crear la solicitud. Por favor intenta nuevamente.');
+  }
+  
+  console.log('Solicitud creada correctamente, redirigiendo al paso 1');
+  
+  // Redirigir al primer paso del proceso
+  redirect('/step/1');
 } 

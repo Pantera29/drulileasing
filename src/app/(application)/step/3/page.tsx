@@ -6,7 +6,8 @@ import { cookies } from 'next/headers';
 import { type FinancialFormData } from '@/lib/schemas/financial-schema';
 
 export default async function FinancialInfoPage() {
-  const supabase = createClient();
+  console.log('Inicializando FinancialInfoPage');
+  const supabase = await createClient();
   
   // Verificar si el usuario está autenticado
   const { data: { session } } = await supabase.auth.getSession();
@@ -49,7 +50,7 @@ export default async function FinancialInfoPage() {
     'use server';
     
     const cookieStore = cookies();
-    const supabase = createClient();
+    const supabase = await createClient();
     
     try {
       const { data: { session } } = await supabase.auth.getSession();

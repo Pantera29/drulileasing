@@ -6,7 +6,8 @@ import { cookies } from 'next/headers';
 import { type EquipmentFormData } from '@/lib/schemas/equipment-schema';
 
 export default async function EquipmentInfoPage() {
-  const supabase = createClient();
+  console.log('Inicializando EquipmentInfoPage');
+  const supabase = await createClient();
   
   // Verificar si el usuario está autenticado
   const { data: { session } } = await supabase.auth.getSession();
@@ -48,10 +49,11 @@ export default async function EquipmentInfoPage() {
   async function saveEquipmentData(data: EquipmentFormData) {
     'use server';
     
+    const supabase = await createClient();
+    
     try {
       console.log("Recibiendo datos en servidor:", JSON.stringify(data));
       
-      const supabase = createClient();
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
