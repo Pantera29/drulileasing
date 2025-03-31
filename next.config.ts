@@ -1,12 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
-  output: 'standalone',
-  // Forzar que todas las rutas sean renderizadas dinámicamente
-  experimental: {},
-  // Para los errores de hidratación de suspense
+  // Configuraciones esenciales para Next.js 15
   reactStrictMode: true,
+  // Marcar todas las rutas del grupo /app como dinámicas
+  unstable_runtimeJS: true,
 };
 
 export default nextConfig;
