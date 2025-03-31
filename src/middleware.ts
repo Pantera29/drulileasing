@@ -53,6 +53,13 @@ export async function middleware(request: NextRequest) {
     );
   }
 
+  // Agregar redirección desde /application a /step/1
+  if (url.pathname === '/application') {
+    console.log('Middleware: Redirigiendo /application a /step/1');
+    // La URL debe ser completa, no solo el pathname
+    return NextResponse.redirect(new URL('/step/1', request.url));
+  }
+
   // En cualquier otro caso, continuar con la solicitud
   return NextResponse.next();
 }
@@ -65,11 +72,13 @@ export const config = {
      * - Correspondencia con todas las rutas de dashboard
      * - Correspondencia con todas las rutas de step
      * - Correspondencia con las rutas de autenticación
+     * - Correspondencia con la ruta de application
      */
     '/dashboard/:path*',
     '/step/:path*',
     '/login',
     '/register',
     '/reset-password',
+    '/application',
   ],
 }; 
