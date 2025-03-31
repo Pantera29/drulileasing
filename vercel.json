@@ -1,0 +1,26 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/next"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/$1"
+    }
+  ],
+  "regions": ["iad1"],
+  "functions": {
+    "src/app/(application)/**/*": {
+      "memory": 1024,
+      "maxDuration": 10
+    },
+    "src/app/dashboard/**/*": {
+      "memory": 1024,
+      "maxDuration": 10
+    }
+  }
+} 

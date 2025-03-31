@@ -49,7 +49,6 @@ export default async function ContactInfoPage() {
   async function saveContactData(data: ContactFormData) {
     'use server';
     
-    const cookieStore = cookies();
     const supabase = await createClient();
     
     try {

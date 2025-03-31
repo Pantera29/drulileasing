@@ -49,7 +49,6 @@ export default async function FinancialInfoPage() {
   async function saveFinancialData(data: FinancialFormData) {
     'use server';
     
-    const cookieStore = cookies();
     const supabase = await createClient();
     
     try {

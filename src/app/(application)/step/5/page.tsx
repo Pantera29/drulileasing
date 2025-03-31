@@ -84,7 +84,6 @@ export default async function ConfirmationPage() {
     'use server';
     
     console.log('Finalizando aplicación');
-    const cookieStore = cookies();
     const supabase = await createClient();
     
     try {

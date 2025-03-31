@@ -2,7 +2,6 @@ import React from 'react';
 import { EquipmentForm } from '@/components/application/forms/equipment-form';
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import { cookies } from 'next/headers';
 import { type EquipmentFormData } from '@/lib/schemas/equipment-schema';
 
 export default async function EquipmentInfoPage() {

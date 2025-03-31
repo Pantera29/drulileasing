@@ -12,7 +12,6 @@ interface Application {
 }
 
 export default async function PersonalDataPage() {
-  const cookieStore = cookies();
   console.log('Inicializando PersonalInfoPage');
   const supabase = await createClient();
   
@@ -124,7 +123,6 @@ export default async function PersonalDataPage() {
     async function savePersonalData(data: PersonalFormData) {
       'use server';
       
-      const cookieStore = cookies();
       const supabase = await createClient();
       
       try {
