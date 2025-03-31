@@ -3,6 +3,9 @@ const nextConfig = {
   reactStrictMode: true,
   // Tratar directorios con paréntesis normalmente
   transpilePackages: [],
+  // Desactivar el rastreo de archivos para evitar problemas con client-reference-manifest.js
+  output: 'standalone',
+  outputFileTracing: false,
   eslint: {
     // Ignorar errores durante el build
     ignoreDuringBuilds: true

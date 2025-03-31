@@ -3,7 +3,12 @@ import { ApplicationLayout } from '@/components/application/layout/application-l
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 
+// Asegurar que el layout sea dinámico
 export const dynamic = 'force-dynamic';
+
+// Indicar a Next.js que este es un componente de servidor
+// lo que ayuda con la generación del manifest
+export const runtime = 'nodejs';
 
 export default async function Layout({
   children,
