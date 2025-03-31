@@ -1,35 +1,20 @@
-import { createClient } from '@supabase/supabase-js'
-import type { NextRequest } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+
+// Forzar que esta ruta sea dinámica
+export const dynamic = 'force-dynamic'
+// Indicar que usamos Node.js
+export const runtime = 'nodejs'
 
 /**
  * Ruta para cerrar sesión
  * Utiliza el método signOut de Supabase Auth y redirige al usuario a la página de inicio.
  */
-export async function POST(request: NextRequest) {
-  // Obtener la URL base para cookies
-  const requestUrl = new URL(request.url)
-  const origin = requestUrl.origin
-  
-  // Crear el cliente de Supabase
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      auth: {
-        flowType: 'pkce',
-        autoRefreshToken: false,
-        detectSessionInUrl: false,
-        persistSession: false
-      }
-    }
-  )
-  
-  // Cerrar sesión en Supabase
+export async function POST() {
+  const supabase = await createClient()
   await supabase.auth.signOut()
   
-  // Redirigir a la página de inicio de sesión
-  return NextResponse.redirect(`${origin}/login?error=signed_out`, {
-    status: 302,
+  return NextResponse.json({
+    success: true
   })
 } 
