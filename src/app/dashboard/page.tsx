@@ -5,13 +5,30 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { createBrowserClient } from '@supabase/ssr';
 
+// Definir interfaces para tipado
+interface Application {
+  id: string;
+  application_status: string;
+  created_at: string;
+  updated_at: string;
+  approved_amount?: number;
+  rejection_reason?: string;
+}
+
 export default function DashboardPage() {
   const [userName, setUserName] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  // Nuevos estados para las solicitudes
-  const [pendingApplications, setPendingApplications] = useState<number>(0);
-  const [pendingApplicationsLoading, setPendingApplicationsLoading] = useState(true);
+  
+  // Estados para las solicitudes
+  const [applications, setApplications] = useState<Application[]>([]);
+  const [applicationsLoading, setApplicationsLoading] = useState(true);
+  
+  // Contadores por estado
+  const [pendingCount, setPendingCount] = useState(0);
+  const [approvedCount, setApprovedCount] = useState(0);
+  const [inReviewCount, setInReviewCount] = useState(0);
+  const [rejectedCount, setRejectedCount] = useState(0);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -74,25 +91,39 @@ export default function DashboardPage() {
             }
           }
           
-          // Consultar solicitudes pendientes
+          // Consultar TODAS las solicitudes del usuario
           try {
-            setPendingApplicationsLoading(true);
-            const { data: applications, error: applicationsError, count } = await supabase
+            setApplicationsLoading(true);
+            const { data: allApplications, error: applicationsError } = await supabase
               .from('credit_applications')
-              .select('*', { count: 'exact' })
+              .select('*')
               .eq('user_id', session.user.id)
-              .eq('application_status', 'pending');
+              .order('updated_at', { ascending: false });
             
             if (applicationsError) {
               console.error('Error al obtener solicitudes:', applicationsError);
             } else {
-              console.log('Solicitudes pendientes:', applications?.length || 0);
-              setPendingApplications(applications?.length || 0);
+              console.log('Total de solicitudes:', allApplications?.length || 0);
+              
+              if (allApplications) {
+                setApplications(allApplications);
+                
+                // Contar solicitudes por estado
+                const pending = allApplications.filter(app => app.application_status === 'pending').length;
+                const approved = allApplications.filter(app => app.application_status === 'approved').length;
+                const inReview = allApplications.filter(app => app.application_status === 'in_review').length;
+                const rejected = allApplications.filter(app => app.application_status === 'rejected').length;
+                
+                setPendingCount(pending);
+                setApprovedCount(approved);
+                setInReviewCount(inReview);
+                setRejectedCount(rejected);
+              }
             }
           } catch (appError) {
             console.error('Error al consultar solicitudes:', appError);
           } finally {
-            setPendingApplicationsLoading(false);
+            setApplicationsLoading(false);
           }
         }
       } catch (error) {
@@ -105,6 +136,40 @@ export default function DashboardPage() {
     
     fetchUserData();
   }, []);
+
+  // Función para obtener la URL de detalle según el estado
+  const getApplicationDetailUrl = (app: Application) => {
+    switch (app.application_status) {
+      case 'approved':
+        return `/result/approved/${app.id}`;
+      case 'in_review':
+        return `/result/reviewing/${app.id}`;
+      case 'rejected':
+        return `/result/rejected/${app.id}`;
+      case 'pending':
+      case 'incomplete':
+      default:
+        return `/application/step/1?edit=${app.id}`;
+    }
+  };
+
+  // Función para mostrar el estado en español
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'approved':
+        return 'Aprobada';
+      case 'in_review':
+        return 'En revisión';
+      case 'rejected':
+        return 'Rechazada';
+      case 'pending':
+        return 'Pendiente';
+      case 'incomplete':
+        return 'Incompleta';
+      default:
+        return status;
+    }
+  };
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -177,46 +242,143 @@ export default function DashboardPage() {
                   Nueva solicitud
                 </Button>
               </Link>
-              <Button variant="outline">
+              <Button variant="outline" onClick={() => {
+                // Scroll al listado de solicitudes
+                document.getElementById('solicitudes')?.scrollIntoView({behavior: 'smooth'});
+              }}>
                 Ver mis solicitudes
               </Button>
             </div>
           </div>
 
-          <div className="grid gap-6 md:grid-cols-3">
+          <div className="grid gap-6 md:grid-cols-4">
             <div className="bg-white rounded-xl p-6 border shadow-sm">
-              <h3 className="text-xl font-bold mb-2">Solicitudes en proceso</h3>
-              {pendingApplicationsLoading ? (
+              <h3 className="text-xl font-bold mb-2">Solicitudes pendientes</h3>
+              {applicationsLoading ? (
                 <p className="text-gray-500">Cargando...</p>
               ) : (
                 <>
-                  <p className="text-3xl font-bold text-primary">{pendingApplications}</p>
+                  <p className="text-3xl font-bold text-primary">{pendingCount}</p>
                   <p className="text-gray-500 mt-2">
-                    {pendingApplications > 0 
-                      ? `Tienes ${pendingApplications} solicitud${pendingApplications !== 1 ? 'es' : ''} en proceso.` 
-                      : 'No tienes solicitudes en proceso actualmente.'}
+                    {pendingCount > 0 
+                      ? `Tienes ${pendingCount} solicitud${pendingCount !== 1 ? 'es' : ''} pendiente${pendingCount !== 1 ? 's' : ''}.` 
+                      : 'No tienes solicitudes pendientes.'}
                   </p>
                 </>
               )}
-              <Link href="/application/step/1" className="text-primary hover:underline text-sm block mt-4">
-                Crear nueva solicitud
-              </Link>
             </div>
+            
             <div className="bg-white rounded-xl p-6 border shadow-sm">
-              <h3 className="text-xl font-bold mb-2">Equipos arrendados</h3>
-              <p className="text-3xl font-bold text-primary">0</p>
-              <p className="text-gray-500 mt-2">
-                No tienes equipos arrendados actualmente.
-              </p>
+              <h3 className="text-xl font-bold mb-2">Solicitudes aprobadas</h3>
+              {applicationsLoading ? (
+                <p className="text-gray-500">Cargando...</p>
+              ) : (
+                <>
+                  <p className="text-3xl font-bold text-green-600">{approvedCount}</p>
+                  <p className="text-gray-500 mt-2">
+                    {approvedCount > 0 
+                      ? `Tienes ${approvedCount} solicitud${approvedCount !== 1 ? 'es' : ''} aprobada${approvedCount !== 1 ? 's' : ''}.` 
+                      : 'No tienes solicitudes aprobadas.'}
+                  </p>
+                </>
+              )}
             </div>
+            
             <div className="bg-white rounded-xl p-6 border shadow-sm">
-              <h3 className="text-xl font-bold mb-2">Próximos pagos</h3>
-              <p className="text-3xl font-bold text-primary">$0.00</p>
-              <p className="text-gray-500 mt-2">
-                No tienes pagos pendientes por ahora.
-              </p>
-              <Link href="#" className="text-primary hover:underline text-sm block mt-4">
-                Ver historial de pagos
+              <h3 className="text-xl font-bold mb-2">En revisión</h3>
+              {applicationsLoading ? (
+                <p className="text-gray-500">Cargando...</p>
+              ) : (
+                <>
+                  <p className="text-3xl font-bold text-amber-600">{inReviewCount}</p>
+                  <p className="text-gray-500 mt-2">
+                    {inReviewCount > 0 
+                      ? `Tienes ${inReviewCount} solicitud${inReviewCount !== 1 ? 'es' : ''} en revisión.` 
+                      : 'No tienes solicitudes en revisión.'}
+                  </p>
+                </>
+              )}
+            </div>
+            
+            <div className="bg-white rounded-xl p-6 border shadow-sm">
+              <h3 className="text-xl font-bold mb-2">Rechazadas</h3>
+              {applicationsLoading ? (
+                <p className="text-gray-500">Cargando...</p>
+              ) : (
+                <>
+                  <p className="text-3xl font-bold text-red-600">{rejectedCount}</p>
+                  <p className="text-gray-500 mt-2">
+                    {rejectedCount > 0 
+                      ? `Tienes ${rejectedCount} solicitud${rejectedCount !== 1 ? 'es' : ''} rechazada${rejectedCount !== 1 ? 's' : ''}.` 
+                      : 'No tienes solicitudes rechazadas.'}
+                  </p>
+                </>
+              )}
+            </div>
+          </div>
+          
+          {/* Listado de solicitudes */}
+          <div id="solicitudes" className="bg-white rounded-xl p-6 border shadow-sm">
+            <h3 className="text-xl font-bold mb-4">Mis solicitudes</h3>
+            
+            {applicationsLoading ? (
+              <p className="text-gray-500">Cargando solicitudes...</p>
+            ) : applications.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        ID
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Estado
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Fecha
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Acciones
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {applications.map((app) => (
+                      <tr key={app.id}>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {app.id.substring(0, 8)}...
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                            ${app.application_status === 'approved' ? 'bg-green-100 text-green-800' : 
+                              app.application_status === 'in_review' ? 'bg-amber-100 text-amber-800' :
+                              app.application_status === 'rejected' ? 'bg-red-100 text-red-800' :
+                              'bg-gray-100 text-gray-800'}`}>
+                            {getStatusLabel(app.application_status)}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {new Date(app.updated_at).toLocaleDateString('es-MX')}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          <Link href={getApplicationDetailUrl(app)} className="text-primary hover:underline">
+                            Ver detalles
+                          </Link>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p className="text-gray-500">No tienes solicitudes. ¡Crea una nueva para comenzar!</p>
+            )}
+            
+            <div className="mt-4">
+              <Link href="/application/step/1">
+                <Button variant="outline" size="sm">
+                  Crear nueva solicitud
+                </Button>
               </Link>
             </div>
           </div>

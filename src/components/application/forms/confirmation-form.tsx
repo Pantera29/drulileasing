@@ -3,13 +3,21 @@
 import React, { useState } from 'react';
 import { SummaryView } from '@/components/application/ui/summary-view';
 import { StepNavigation } from '@/components/application/layout/step-navigation';
+import { useRouter } from 'next/navigation';
+
+// Tipo para la respuesta del servidor
+interface SubmitResponse {
+  success: boolean;
+  redirectTo: string | null;
+  message: string;
+}
 
 interface ConfirmationFormProps {
   summaryData: any;
   onSubmit: (data: { 
     creditCheckAuthorized: boolean; 
     termsAccepted: boolean;
-  }) => Promise<boolean>;
+  }) => Promise<SubmitResponse>;
   applicationId: string;
 }
 
@@ -22,9 +30,12 @@ export function ConfirmationForm({
   const [creditCheckAuthorized, setCreditCheckAuthorized] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const router = useRouter();
   
   const handleFormSubmit = async () => {
     setError(null);
+    setSuccessMessage(null);
     
     // Validar que ambos checkboxes estén marcados
     if (!creditCheckAuthorized || !termsAccepted) {
@@ -34,11 +45,32 @@ export function ConfirmationForm({
     
     setIsSubmitting(true);
     try {
-      const success = await onSubmit({
+      const response = await onSubmit({
         creditCheckAuthorized,
         termsAccepted,
       });
-      return success;
+
+      console.log('Respuesta del servidor:', response);
+      
+      if (response.success) {
+        // Si hay una URL de redirección, redirigimos después de mostrar un mensaje de éxito
+        if (response.redirectTo) {
+          setSuccessMessage(`¡Solicitud procesada correctamente! ${response.message}`);
+          setTimeout(() => {
+            router.push(response.redirectTo as string);
+          }, 1500);
+        } else {
+          // Sin URL de redirección, vamos al dashboard como fallback
+          setSuccessMessage('¡Solicitud enviada! Redirigiendo al dashboard...');
+          setTimeout(() => {
+            router.push('/dashboard');
+          }, 1500);
+        }
+        return true;
+      } else {
+        setError(response.message || 'Ocurrió un error al procesar tu solicitud.');
+        return false;
+      }
     } catch (error) {
       console.error('Error al finalizar la solicitud:', error);
       setError('Ocurrió un error al procesar tu solicitud. Por favor, intenta nuevamente.');
@@ -69,6 +101,14 @@ export function ConfirmationForm({
           Por favor revisa los datos de tu solicitud antes de finalizar.
         </p>
         
+        {successMessage && (
+          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-md">
+            <p className="text-green-800 text-sm font-medium">
+              {successMessage}
+            </p>
+          </div>
+        )}
+        
         <div className="mb-8">
           <SummaryView data={summaryData} />
         </div>
@@ -88,6 +128,7 @@ export function ConfirmationForm({
                   checked={creditCheckAuthorized}
                   onChange={(e) => setCreditCheckAuthorized(e.target.checked)}
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  disabled={isSubmitting}
                 />
               </div>
               <div className="ml-3 text-sm">
@@ -109,6 +150,7 @@ export function ConfirmationForm({
                   checked={termsAccepted}
                   onChange={(e) => setTermsAccepted(e.target.checked)}
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  disabled={isSubmitting}
                 />
               </div>
               <div className="ml-3 text-sm">

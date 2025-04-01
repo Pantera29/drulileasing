@@ -53,17 +53,22 @@ export default async function ContactInfoPage() {
   async function saveContactData(data: ContactFormData) {
     'use server';
     
+    console.log('Iniciando saveContactData con datos:', JSON.stringify(data));
     const supabase = await createClient();
     
     try {
+      // Verificar la sesión del usuario
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
+        console.error('Error: No hay sesión de usuario activa');
         return false;
       }
       
+      console.log('Sesión válida para usuario:', session.user.id);
+      
       // Obtener la aplicación actual
-      const { data: application } = await supabase
+      const { data: application, error: appQueryError } = await supabase
         .from('credit_applications')
         .select('id, contact_id')
         .eq('user_id', session.user.id)
@@ -72,40 +77,58 @@ export default async function ContactInfoPage() {
         .limit(1)
         .single();
       
-      if (!application) {
+      if (appQueryError || !application) {
+        console.error('Error al obtener la aplicación:', appQueryError?.message);
         return false;
       }
+      
+      console.log('Aplicación encontrada:', application.id);
       
       let contactId;
       
       // Si ya existe información de contacto, actualizarla
       if (application.contact_id) {
-        const { error: updateError } = await supabase
-          .from('contact_info')
-          .update({
-            street: data.street,
-            street_number: data.street_number,
-            neighborhood: data.neighborhood,
-            city: data.city,
-            state: data.state,
-            zip_code: data.zip_code,
-            housing_type: null,
-            residence_time: null,
-            mobile_phone: data.mobile_phone,
-            home_phone: null,
-            alternative_email: null,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', application.contact_id);
-          
-        if (updateError) {
-          console.error('Error al actualizar información de contacto:', updateError);
-          return false;
-        }
+        console.log('Actualizando contact_id existente:', application.contact_id);
         
-        contactId = application.contact_id;
-      } else {
-        // Crear nueva información de contacto
+        // Verificar si el contact_id existe en la tabla de contactos
+        const { data: existingContact, error: checkError } = await supabase
+          .from('contact_info')
+          .select('id')
+          .eq('id', application.contact_id)
+          .single();
+        
+        if (checkError || !existingContact) {
+          console.log('El contact_id no existe en la tabla, creando nuevo registro');
+          // Si no existe, crear un nuevo registro en lugar de actualizar
+          contactId = null;
+        } else {
+          const { error: updateError } = await supabase
+            .from('contact_info')
+            .update({
+              street: data.street,
+              street_number: data.street_number,
+              neighborhood: data.neighborhood,
+              city: data.city,
+              state: data.state,
+              zip_code: data.zip_code,
+              mobile_phone: data.mobile_phone,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', application.contact_id);
+            
+          if (updateError) {
+            console.error('Error al actualizar información de contacto:', updateError);
+            return false;
+          }
+          
+          contactId = application.contact_id;
+          console.log('Contact_info actualizado con éxito, ID:', contactId);
+        }
+      }
+      
+      // Si no hay contact_id o no existe en la tabla, crear nuevo registro
+      if (!contactId) {
+        console.log('Creando nuevo registro de contact_info');
         const { data: newContact, error: insertError } = await supabase
           .from('contact_info')
           .insert({
@@ -116,24 +139,22 @@ export default async function ContactInfoPage() {
             city: data.city,
             state: data.state,
             zip_code: data.zip_code,
-            housing_type: null,
-            residence_time: null,
             mobile_phone: data.mobile_phone,
-            home_phone: null,
-            alternative_email: null,
           })
           .select('id')
           .single();
           
-        if (insertError) {
-          console.error('Error al crear información de contacto:', insertError);
+        if (insertError || !newContact) {
+          console.error('Error al crear información de contacto:', insertError?.message);
           return false;
         }
         
         contactId = newContact.id;
+        console.log('Nuevo contact_info creado con éxito, ID:', contactId);
       }
       
       // Actualizar la referencia en la aplicación
+      console.log('Actualizando la referencia en credit_applications');
       const { error: appError } = await supabase
         .from('credit_applications')
         .update({
@@ -147,9 +168,10 @@ export default async function ContactInfoPage() {
         return false;
       }
       
+      console.log('Todo el proceso completado con éxito');
       return true;
     } catch (error) {
-      console.error('Error al guardar los datos de contacto:', error);
+      console.error('Error general al guardar los datos de contacto:', error);
       return false;
     }
   }

@@ -2,6 +2,7 @@ import React from 'react';
 import { ConfirmationForm } from '@/components/application/forms/confirmation-form';
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
+import { evaluateAndRedirect, evaluateApplication } from '@/lib/services/credit-evaluation/actions';
 
 // Forzar que esta ruta sea dinámica
 export const dynamic = 'force-dynamic';
@@ -93,29 +94,73 @@ export default async function ConfirmationPage() {
     try {
       console.log('Finalizando solicitud, datos recibidos:', JSON.stringify(data));
       
-      const { data: { session } } = await supabase.auth.getSession();
+      // Verificar autenticación con getUser() por seguridad
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
       
-      if (!session) {
-        console.error('No hay sesión de usuario al finalizar la solicitud');
-        return false;
+      if (authError || !user) {
+        console.error('Error de autenticación al finalizar la solicitud:', authError);
+        return {
+          success: false,
+          redirectTo: null,
+          message: 'Error de autenticación'
+        };
       }
       
-      // Obtener la aplicación actual
+      console.log('Usuario autenticado:', user.id);
+      
+      // Obtener la aplicación más reciente del usuario
       const { data: application, error: fetchError } = await supabase
         .from('credit_applications')
-        .select('id')
-        .eq('user_id', session.user.id)
-        .eq('application_status', 'incomplete')
+        .select('id, application_status')
+        .eq('user_id', user.id)
         .order('updated_at', { ascending: false })
         .limit(1)
         .single();
       
       if (fetchError || !application) {
         console.error('Error al obtener la aplicación actual:', fetchError);
-        return false;
+        return {
+          success: false,
+          redirectTo: null,
+          message: 'No se encontró la aplicación'
+        };
       }
       
-      // Actualizar el estado de la aplicación a 'pending'
+      console.log('Aplicación encontrada:', application.id, 'Estado actual:', application.application_status);
+      
+      // Si la aplicación ya no está en estado incompleto, probablemente ya fue procesada
+      // En este caso, enviamos información al cliente sobre dónde debería redireccionar
+      if (application.application_status !== 'incomplete') {
+        console.log('La aplicación ya no está en estado incompleto, informando al cliente sobre redirección:', application.application_status);
+        
+        // Construir la URL de redirección según el estado
+        let redirectUrl;
+        switch (application.application_status) {
+          case 'approved':
+            redirectUrl = `/result/approved/${application.id}`;
+            break;
+          case 'in_review':
+            redirectUrl = `/result/reviewing/${application.id}`;
+            break;
+          case 'rejected':
+            redirectUrl = `/result/rejected/${application.id}`;
+            break;
+          default:
+            redirectUrl = '/dashboard';
+        }
+        
+        // Devolver la información para que el cliente maneje la redirección
+        return {
+          success: true,
+          redirectTo: redirectUrl,
+          message: `Aplicación ya procesada con estado: ${application.application_status}`
+        };
+      }
+      
+      // Almacenar el ID de la aplicación para usarlo después
+      const applicationId = application.id;
+      
+      // Actualizar el estado de la aplicación a 'pending' y registrar la autorización
       const { error: updateError } = await supabase
         .from('credit_applications')
         .update({
@@ -124,17 +169,69 @@ export default async function ConfirmationPage() {
           terms_accepted: data.termsAccepted,
           updated_at: new Date().toISOString(),
         })
-        .eq('id', application.id);
+        .eq('id', applicationId);
       
       if (updateError) {
         console.error('Error al actualizar el estado de la aplicación:', updateError);
-        return false;
+        return {
+          success: false,
+          redirectTo: null,
+          message: 'Error al actualizar la aplicación'
+        };
       }
       
-      return true;
+      console.log('Aplicación actualizada correctamente a estado pending');
+      
+      try {
+        // Iniciar el proceso de evaluación de crédito
+        await evaluateApplication(applicationId);
+        
+        // Obtener el nuevo estado después de la evaluación
+        const { data: updatedApp } = await supabase
+          .from('credit_applications')
+          .select('application_status')
+          .eq('id', applicationId)
+          .single();
+        
+        // Construir la URL de redirección según el nuevo estado
+        let redirectUrl = '/dashboard'; // Valor por defecto
+        
+        if (updatedApp) {
+          switch (updatedApp.application_status) {
+            case 'approved':
+              redirectUrl = `/result/approved/${applicationId}`;
+              break;
+            case 'in_review':
+              redirectUrl = `/result/reviewing/${applicationId}`;
+              break;
+            case 'rejected':
+              redirectUrl = `/result/rejected/${applicationId}`;
+              break;
+          }
+        }
+        
+        // Devolver información para que el cliente maneje la redirección
+        return {
+          success: true,
+          redirectTo: redirectUrl,
+          message: updatedApp ? `Aplicación evaluada con estado: ${updatedApp.application_status}` : 'Aplicación procesada'
+        };
+      } catch (evaluationError) {
+        console.error('Error durante la evaluación de crédito:', evaluationError);
+        // Incluso con error, devolvemos true con redirección al dashboard
+        return {
+          success: true,
+          redirectTo: '/dashboard',
+          message: 'Error en evaluación, pero la solicitud se completó'
+        };
+      }
     } catch (error) {
       console.error('Error inesperado al finalizar la solicitud:', error);
-      return false;
+      return {
+        success: false,
+        redirectTo: null,
+        message: 'Error interno del servidor'
+      };
     }
   }
   

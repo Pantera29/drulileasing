@@ -44,10 +44,13 @@ export function ContactForm({ initialData, onSubmit, applicationId }: ContactFor
     setSaveError(null);
     
     try {
-      console.log('Enviando datos de contacto:', data);
-      const success = await onSubmit(data);
+      console.log('Enviando datos de contacto al servidor:', data);
       
-      if (success) {
+      // Llamada al servidor
+      const response = await onSubmit(data);
+      console.log('Respuesta del servidor:', response);
+      
+      if (response === true) {
         console.log('Datos de contacto guardados exitosamente');
         setSaveSuccess(true);
         // Esperamos un momento antes de navegar al siguiente paso
@@ -57,12 +60,12 @@ export function ContactForm({ initialData, onSubmit, applicationId }: ContactFor
         return true;
       } else {
         console.error('Error al guardar los datos de contacto: el servidor retornó false');
-        setSaveError('No se pudieron guardar los datos. Por favor intenta nuevamente.');
+        setSaveError('No se pudieron guardar los datos. Por favor intenta nuevamente. El servidor no pudo procesar la solicitud.');
         return false;
       }
     } catch (error) {
-      console.error('Error al guardar los datos de contacto:', error);
-      setSaveError('Ocurrió un error al procesar tu solicitud. Por favor intenta nuevamente.');
+      console.error('Error en cliente al guardar los datos de contacto:', error);
+      setSaveError(`Ocurrió un error al procesar tu solicitud: ${error instanceof Error ? error.message : 'Error desconocido'}`);
       return false;
     } finally {
       setIsSubmitting(false);
