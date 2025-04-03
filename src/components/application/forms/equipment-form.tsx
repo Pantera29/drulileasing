@@ -117,12 +117,29 @@ export function EquipmentForm({
     }
   };
 
-  // Calcular pago mensual estimado (muy simple)
+  // Calcular la tasa de interés según monto y plazo
+  // (copiada del simulador de la landing)
+  const calculateInterestRate = (amount: number, term: number): number => {
+    // Tasa base
+    let rate = 0.15;
+
+    // Ajustes según el monto (montos más altos, tasas menores)
+    if (amount > 1000000) rate -= 0.01;
+    if (amount > 1500000) rate -= 0.005;
+
+    // Ajustes según el plazo (plazos más largos, tasas mayores)
+    if (term > 24) rate += 0.005;
+    if (term > 36) rate += 0.005;
+
+    return rate;
+  };
+  
+  // Calcular pago mensual estimado con la misma lógica del simulador de la landing
   const calculateMonthlyPayment = () => {
     if (!currentAmount || currentAmount < 10000 || !currentTerm) return 0;
     
-    // Tasa de interés anual estimada (10%)
-    const annualRate = 0.10;
+    // Calcular la tasa según los parámetros
+    const annualRate = calculateInterestRate(currentAmount, currentTerm);
     const monthlyRate = annualRate / 12;
     
     try {
@@ -259,9 +276,14 @@ export function EquipmentForm({
               <p className="text-2xl font-bold text-blue-900 mt-1">
                 {formatCurrency(monthlyPayment)}
               </p>
-              <p className="text-xs text-blue-500 mt-1">
-                *Este es un cálculo aproximado. El monto final dependerá de la evaluación de crédito.
-              </p>
+              <div className="flex justify-between mt-2">
+                <p className="text-xs text-blue-500">
+                  *Este es un cálculo aproximado. El monto final dependerá de la evaluación de crédito.
+                </p>
+                <p className="text-xs font-medium text-blue-700">
+                  Tasa anual: {(calculateInterestRate(currentAmount, currentTerm) * 100).toFixed(1)}%
+                </p>
+              </div>
             </div>
           )}
           

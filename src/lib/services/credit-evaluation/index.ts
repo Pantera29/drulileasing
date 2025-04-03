@@ -36,7 +36,7 @@ export async function evaluateApplication(applicationId: string): Promise<Credit
   try {
     const supabase = await createClient();
     
-    // Verificar el estado actual antes de actualizar
+    // Verificar el estado actual antes de comenzar
     const { data: currentApp } = await supabase
       .from('credit_applications')
       .select('id, application_status')
@@ -45,28 +45,10 @@ export async function evaluateApplication(applicationId: string): Promise<Credit
     
     console.log('Estado actual antes de evaluación:', currentApp?.application_status);
     
-    // Actualizar el estado a 'pending_nip' antes de iniciar evaluación
-    const { error: updateError } = await supabase
-      .from('credit_applications')
-      .update({
-        application_status: ApplicationStatus.PENDING_NIP,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', applicationId);
-    
-    if (updateError) {
-      console.error('Error al actualizar estado a pending_nip:', updateError);
-      throw new Error('No se pudo actualizar el estado de la aplicación');
-    }
-    
-    // Verificar que el estado se haya actualizado correctamente
-    const { data: updatedApp } = await supabase
-      .from('credit_applications')
-      .select('id, application_status')
-      .eq('id', applicationId)
-      .single();
-    
-    console.log('Estado después de actualización:', updatedApp?.application_status);
+    // IMPORTANTE: Ya no actualizamos el estado a pending_nip aquí
+    // Este cambio debe ocurrir en el paso 5 cuando el usuario acepta los términos y condiciones
+    // y autoriza la consulta al buró de crédito.
+    // Ahora asumimos que la aplicación ya está en estado pending_nip cuando llega aquí.
     
     // Obtener todos los datos necesarios para la evaluación
     const { data, error } = await supabase

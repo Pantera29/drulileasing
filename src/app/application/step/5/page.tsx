@@ -176,7 +176,9 @@ export default async function ConfirmationPage() {
       
       console.log('Actualizando aplicación ID:', applicationId, 'a estado pending_nip');
       
-      // PRIMERO: Actualizar el estado de la aplicación a pending_nip
+      // IMPORTANTE: Actualizamos el estado de la aplicación a "pending_nip" aquí en el paso 5
+      // cuando el usuario acepta los términos y condiciones y autoriza la consulta al buró.
+      // Esto debe hacerse antes de enviar el NIP y no en la función evaluateApplication.
       console.log('Actualizando application_status a pending_nip antes de enviar NIP...');
       
       // Primera verificación del estado actual
@@ -193,6 +195,9 @@ export default async function ConfirmationPage() {
         .from('credit_applications')
         .update({ 
           application_status: 'pending_nip',
+          credit_check_authorized: data.creditCheckAuthorized,
+          terms_accepted: data.termsAccepted,
+          updated_at: new Date().toISOString(),
         })
         .eq('id', applicationId);
         
@@ -214,27 +219,6 @@ export default async function ConfirmationPage() {
         
       console.log('Estado después de la primera actualización:', afterUpdate?.application_status);
       
-      // Luego actualizar el resto de los campos
-      const { error: updateError } = await supabase
-        .from('credit_applications')
-        .update({
-          credit_check_authorized: data.creditCheckAuthorized,
-          terms_accepted: data.termsAccepted,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', applicationId);
-        
-      if (updateError) {
-        console.error('Error al actualizar otros campos:', updateError);
-        return {
-          success: false,
-          redirectTo: null,
-          message: 'Error al actualizar la solicitud'
-        };
-      }
-      
-      console.log('Estado actualizado correctamente a pending_nip');
-      
       // Obtener información de contacto para enviar el NIP
       const { data: contactInfo, error: contactError } = await supabase
         .from('contact_info')
@@ -253,27 +237,6 @@ export default async function ConfirmationPage() {
       
       // Importar y usar el servicio Kiban para enviar el NIP
       try {
-        // PRIMERO: Actualizar el estado de la aplicación a pending_nip
-        console.log('Actualizando application_status a pending_nip antes de enviar NIP...');
-        
-        const { error: statusUpdateError } = await supabase
-          .from('credit_applications')
-          .update({ 
-            application_status: 'pending_nip',
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', applicationId);
-          
-        if (statusUpdateError) {
-          console.error('Error al actualizar estado a pending_nip:', statusUpdateError);
-          return {
-            success: false,
-            message: 'Error al actualizar el estado de la solicitud'
-          };
-        }
-        
-        console.log('Estado actualizado correctamente a pending_nip');
-        
         // SEGUNDO: Enviar el NIP
         const { KibanService } = await import('@/lib/services/kiban/kiban.service');
         const kibanService = new KibanService();
