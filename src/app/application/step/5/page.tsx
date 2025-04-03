@@ -2,7 +2,14 @@ import React from 'react';
 import { ConfirmationForm } from '@/components/application/forms/confirmation-form';
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import { evaluateAndRedirect, evaluateApplication } from '@/lib/services/credit-evaluation/actions';
+import { evaluateApplication } from '@/lib/services/credit-evaluation';
+import { Metadata } from 'next';
+import { StepLayout } from '@/components/application/step-layout';
+
+export const metadata: Metadata = {
+  title: 'Confirmación de solicitud | Crédito Druli',
+  description: 'Revisa y confirma tu solicitud de crédito para equipamiento deportivo',
+};
 
 // Forzar que esta ruta sea dinámica
 export const dynamic = 'force-dynamic';
@@ -88,12 +95,10 @@ export default async function ConfirmationPage() {
   }) {
     'use server';
     
-    console.log('Finalizando aplicación');
+    console.log('Finalizando aplicación con datos:', JSON.stringify(data));
     const supabase = await createClient();
     
     try {
-      console.log('Finalizando solicitud, datos recibidos:', JSON.stringify(data));
-      
       // Verificar autenticación con getUser() por seguridad
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       
@@ -111,7 +116,7 @@ export default async function ConfirmationPage() {
       // Obtener la aplicación más reciente del usuario
       const { data: application, error: fetchError } = await supabase
         .from('credit_applications')
-        .select('id, application_status')
+        .select('id, application_status, kiban_request_id, nip_validated, contact_id')
         .eq('user_id', user.id)
         .order('updated_at', { ascending: false })
         .limit(1)
@@ -129,7 +134,6 @@ export default async function ConfirmationPage() {
       console.log('Aplicación encontrada:', application.id, 'Estado actual:', application.application_status);
       
       // Si la aplicación ya no está en estado incompleto, probablemente ya fue procesada
-      // En este caso, enviamos información al cliente sobre dónde debería redireccionar
       if (application.application_status !== 'incomplete') {
         console.log('La aplicación ya no está en estado incompleto, informando al cliente sobre redirección:', application.application_status);
         
@@ -157,91 +161,186 @@ export default async function ConfirmationPage() {
         };
       }
       
+      // Si ya tiene un kiban_request_id pero no ha sido validado, redirigir a la página de validación
+      if (application.kiban_request_id && !application.nip_validated) {
+        console.log('Aplicación con kiban_request_id sin validar, redirigiendo a verificación');
+        return {
+          success: true,
+          redirectTo: `/application/verify-nip/${application.id}`,
+          message: 'Código ya enviado, redirigiendo a verificación'
+        };
+      }
+      
       // Almacenar el ID de la aplicación para usarlo después
       const applicationId = application.id;
       
-      // Actualizar el estado de la aplicación a 'pending' y registrar la autorización
+      console.log('Actualizando aplicación ID:', applicationId, 'a estado pending_nip');
+      
+      // PRIMERO: Actualizar el estado de la aplicación a pending_nip
+      console.log('Actualizando application_status a pending_nip antes de enviar NIP...');
+      
+      // Primera verificación del estado actual
+      const { data: priorState } = await supabase
+        .from('credit_applications')
+        .select('application_status')
+        .eq('id', applicationId)
+        .single();
+        
+      console.log('Estado actual antes del cambio:', priorState?.application_status);
+      
+      // Actualizar explícitamente solo el estado
+      const { error: statusUpdateError } = await supabase
+        .from('credit_applications')
+        .update({ 
+          application_status: 'pending_nip',
+        })
+        .eq('id', applicationId);
+        
+      if (statusUpdateError) {
+        console.error('Error al actualizar estado a pending_nip:', statusUpdateError);
+        return {
+          success: false,
+          redirectTo: null,
+          message: 'Error al actualizar el estado de la solicitud'
+        };
+      }
+      
+      // Segunda verificación para confirmar el cambio
+      const { data: afterUpdate } = await supabase
+        .from('credit_applications')
+        .select('application_status')
+        .eq('id', applicationId)
+        .single();
+        
+      console.log('Estado después de la primera actualización:', afterUpdate?.application_status);
+      
+      // Luego actualizar el resto de los campos
       const { error: updateError } = await supabase
         .from('credit_applications')
         .update({
-          application_status: 'pending',
           credit_check_authorized: data.creditCheckAuthorized,
           terms_accepted: data.termsAccepted,
           updated_at: new Date().toISOString(),
         })
         .eq('id', applicationId);
-      
+        
       if (updateError) {
-        console.error('Error al actualizar el estado de la aplicación:', updateError);
+        console.error('Error al actualizar otros campos:', updateError);
         return {
           success: false,
           redirectTo: null,
-          message: 'Error al actualizar la aplicación'
+          message: 'Error al actualizar la solicitud'
         };
       }
       
-      console.log('Aplicación actualizada correctamente a estado pending');
+      console.log('Estado actualizado correctamente a pending_nip');
       
-      try {
-        // Iniciar el proceso de evaluación de crédito
-        await evaluateApplication(applicationId);
+      // Obtener información de contacto para enviar el NIP
+      const { data: contactInfo, error: contactError } = await supabase
+        .from('contact_info')
+        .select('mobile_phone')
+        .eq('id', application.contact_id)
+        .single();
         
-        // Obtener el nuevo estado después de la evaluación
-        const { data: updatedApp } = await supabase
+      if (contactError || !contactInfo) {
+        console.error('Error al obtener información de contacto:', contactError);
+        return {
+          success: false,
+          redirectTo: null,
+          message: 'No se pudo obtener el número de teléfono para enviar el código'
+        };
+      }
+      
+      // Importar y usar el servicio Kiban para enviar el NIP
+      try {
+        // PRIMERO: Actualizar el estado de la aplicación a pending_nip
+        console.log('Actualizando application_status a pending_nip antes de enviar NIP...');
+        
+        const { error: statusUpdateError } = await supabase
+          .from('credit_applications')
+          .update({ 
+            application_status: 'pending_nip',
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', applicationId);
+          
+        if (statusUpdateError) {
+          console.error('Error al actualizar estado a pending_nip:', statusUpdateError);
+          return {
+            success: false,
+            message: 'Error al actualizar el estado de la solicitud'
+          };
+        }
+        
+        console.log('Estado actualizado correctamente a pending_nip');
+        
+        // SEGUNDO: Enviar el NIP
+        const { KibanService } = await import('@/lib/services/kiban/kiban.service');
+        const kibanService = new KibanService();
+        
+        // Enviar NIP al teléfono del usuario
+        const kibanRequestId = await kibanService.sendNip(contactInfo.mobile_phone);
+        
+        // Registrar ID de solicitud de Kiban en la aplicación (sin cambiar el estado que ya actualizamos)
+        await supabase
+          .from('credit_applications')
+          .update({
+            kiban_request_id: kibanRequestId,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', applicationId);
+          
+        console.log('NIP enviado correctamente, ID de solicitud Kiban:', kibanRequestId);
+        
+        // Verificar que el estado siga siendo pending_nip
+        const { data: verifyStatus } = await supabase
           .from('credit_applications')
           .select('application_status')
           .eq('id', applicationId)
           .single();
+          
+        console.log('Estado final de la aplicación:', verifyStatus?.application_status);
         
-        // Construir la URL de redirección según el nuevo estado
-        let redirectUrl = '/dashboard'; // Valor por defecto
-        
-        if (updatedApp) {
-          switch (updatedApp.application_status) {
-            case 'approved':
-              redirectUrl = `/result/approved/${applicationId}`;
-              break;
-            case 'in_review':
-              redirectUrl = `/result/reviewing/${applicationId}`;
-              break;
-            case 'rejected':
-              redirectUrl = `/result/rejected/${applicationId}`;
-              break;
-          }
-        }
-        
-        // Devolver información para que el cliente maneje la redirección
+        // Redirigir a la página de verificación de NIP
         return {
           success: true,
-          redirectTo: redirectUrl,
-          message: updatedApp ? `Aplicación evaluada con estado: ${updatedApp.application_status}` : 'Aplicación procesada'
+          redirectTo: `/application/verify-nip/${applicationId}`,
+          message: 'Código enviado correctamente, redirigiendo a verificación'
         };
-      } catch (evaluationError) {
-        console.error('Error durante la evaluación de crédito:', evaluationError);
-        // Incluso con error, devolvemos true con redirección al dashboard
+      } catch (kibanError) {
+        console.error('Error al enviar NIP con Kiban:', kibanError);
         return {
-          success: true,
-          redirectTo: '/dashboard',
-          message: 'Error en evaluación, pero la solicitud se completó'
+          success: false,
+          redirectTo: null,
+          message: 'Error al enviar el código de verificación. Intente nuevamente.'
         };
       }
     } catch (error) {
-      console.error('Error inesperado al finalizar la solicitud:', error);
+      console.error('Error general al finalizar solicitud:', error);
       return {
         success: false,
         redirectTo: null,
-        message: 'Error interno del servidor'
+        message: 'Ocurrió un error inesperado. Intente nuevamente.'
       };
     }
   }
   
   return (
-    <div>
-      <ConfirmationForm 
-        summaryData={summaryData}
-        onSubmit={finishApplication}
-        applicationId={application.id}
-      />
+    <div className="container mx-auto px-4 py-8 max-w-3xl">
+      {/* Título y descripción */}
+      <div className="mb-8 text-center">
+        <h1 className="text-2xl font-bold mb-2">Confirma tu solicitud</h1>
+        <p className="text-gray-600">Revisa los detalles y finaliza tu solicitud</p>
+      </div>
+      
+      {/* Contenido */}
+      <div className="bg-white rounded-lg shadow-md p-6">
+        <ConfirmationForm 
+          summaryData={summaryData} 
+          onSubmit={finishApplication} 
+          applicationId={application.id} 
+        />
+      </div>
     </div>
   );
 } 

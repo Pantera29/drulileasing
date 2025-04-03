@@ -144,16 +144,6 @@ export function SummaryView({ data }: SummaryViewProps) {
               </p>
             </div>
             <div>
-              <p className="text-xs font-medium text-gray-500">Tipo de vivienda</p>
-              <p className="mt-1 text-sm text-gray-900">
-                {translations.housing_type[data.contact.housing_type as keyof typeof translations.housing_type] || data.contact.housing_type}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs font-medium text-gray-500">Tiempo de residencia</p>
-              <p className="mt-1 text-sm text-gray-900">{data.contact.residence_time}</p>
-            </div>
-            <div>
               <p className="text-xs font-medium text-gray-500">Teléfono móvil</p>
               <p className="mt-1 text-sm text-gray-900">{data.contact.mobile_phone}</p>
             </div>

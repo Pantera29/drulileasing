@@ -9,13 +9,15 @@ interface StepNavigationProps {
   totalSteps: number;
   onSave: () => Promise<boolean>; // Devuelve true si el guardado fue exitoso
   isSubmitting: boolean;
+  nextButtonText?: string; // Texto personalizado para el botón final
 }
 
 export function StepNavigation({
   currentStep,
   totalSteps,
   onSave,
-  isSubmitting
+  isSubmitting,
+  nextButtonText
 }: StepNavigationProps) {
   const router = useRouter();
   const [isNavigating, setIsNavigating] = useState(false);
@@ -164,10 +166,10 @@ export function StepNavigation({
                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                   ></path>
                 </svg>
-                Enviando...
+                {isSubmitting ? nextButtonText && nextButtonText.includes('...') ? nextButtonText : 'Enviando...' : 'Guardando...'}
               </>
             ) : (
-              'Finalizar solicitud'
+              nextButtonText || 'Finalizar solicitud'
             )}
           </button>
         )}

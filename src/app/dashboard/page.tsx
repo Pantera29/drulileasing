@@ -109,7 +109,10 @@ export default function DashboardPage() {
                 setApplications(allApplications);
                 
                 // Contar solicitudes por estado
-                const pending = allApplications.filter(app => app.application_status === 'pending').length;
+                const pending = allApplications.filter(app => 
+                  app.application_status === 'pending_nip' || 
+                  app.application_status === 'incomplete'
+                ).length;
                 const approved = allApplications.filter(app => app.application_status === 'approved').length;
                 const inReview = allApplications.filter(app => app.application_status === 'in_review').length;
                 const rejected = allApplications.filter(app => app.application_status === 'rejected').length;
@@ -146,7 +149,7 @@ export default function DashboardPage() {
         return `/result/reviewing/${app.id}`;
       case 'rejected':
         return `/result/rejected/${app.id}`;
-      case 'pending':
+      case 'pending_nip':
       case 'incomplete':
       default:
         return `/application/step/1?edit=${app.id}`;
@@ -162,8 +165,8 @@ export default function DashboardPage() {
         return 'En revisión';
       case 'rejected':
         return 'Rechazada';
-      case 'pending':
-        return 'Pendiente';
+      case 'pending_nip':
+        return 'Pendiente de NIP';
       case 'incomplete':
         return 'Incompleta';
       default:

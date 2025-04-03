@@ -26,7 +26,7 @@ export function EquipmentForm({
   const defaultValues = {
     equipment_type: 'Genérico',
     equipment_model: 'Estándar',
-    approximate_amount: 10000, // Mínimo requerido por el esquema
+    approximate_amount: 100000, // Mínimo requerido por el esquema
     desired_term: 24, // Default 24 meses
     additional_comments: '',
   };
@@ -206,13 +206,13 @@ export function EquipmentForm({
                   type="number"
                   min="10000"
                   step="1000"
-                  defaultValue={10000}
+                  defaultValue={100000}
                   {...register('approximate_amount', { 
                     valueAsNumber: true,
                     min: 10000
                   })}
                   className="block w-full pl-7 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  placeholder="10000"
+                  placeholder="100000"
                 />
               </div>
               {errors.approximate_amount && (
