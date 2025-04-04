@@ -365,4 +365,104 @@ export class KibanService {
       throw error;
     }
   }
+
+  /**
+   * Procesa la respuesta del buró de crédito y extrae los datos relevantes
+   */
+  async processCreditBureauData(
+    userId: string,
+    applicationId: string,
+    response: any
+  ): Promise<void> {
+    try {
+      const supabase = await createClient();
+      
+      // Extraer los datos relevantes
+      const details = {
+        id: response.id,
+        application_id: applicationId,
+        user_id: userId,
+        response_date: new Date(response.createdAt),
+        
+        // Score (tomamos el primer valor disponible)
+        score: response.response.scoreBuroCredito?.[0]?.valorScore || 0,
+        score_name: response.response.scoreBuroCredito?.[0]?.nombreScore || '',
+        
+        // Resumen de cuentas (del primer resumenReporte)
+        total_accounts: response.response.resumenReporte?.[0]?.numeroCuentas || 0,
+        open_accounts: (response.response.resumenReporte?.[0]?.cuentasRevolventesAbiertas || 0) + 
+                      (response.response.resumenReporte?.[0]?.cuentasPagosFijosHipotecas || 0) - 
+                      (response.response.resumenReporte?.[0]?.cuentasCerradas || 0),
+        closed_accounts: response.response.resumenReporte?.[0]?.cuentasCerradas || 0,
+        negative_accounts: response.response.resumenReporte?.[0]?.cuentasNegativasActuales || 0,
+        
+        // Alertas
+        has_hawk_alerts: (response.response.hawkAlertBD?.length > 0 || 
+                         response.response.hawkAlertConsulta?.length > 0),
+        hawk_alert_codes: [
+          ...(response.response.hawkAlertBD || []).map((alert: any) => alert.codigoClave),
+          ...(response.response.hawkAlertConsulta || []).map((alert: any) => alert.codigoClave)
+        ],
+        
+        // Historial
+        oldest_account_date: response.response.resumenReporte?.[0]?.fechaAperturaCuentaMasAntigua || null,
+        newest_account_date: response.response.resumenReporte?.[0]?.fechaAperturaCuentaMasReciente || null,
+        inquiries_last_6_months: response.response.resumenReporte?.[0]?.numeroSolicitudesUltimos6Meses || 0,
+        
+        // Montos
+        total_current_balance: (
+          (response.response.resumenReporte?.[0]?.totalSaldosActualesPagosFijos || 0) +
+          (response.response.resumenReporte?.[0]?.totalSaldosActualesRevolventes || 0)
+        ),
+        total_credit_limit: (
+          (response.response.resumenReporte?.[0]?.totalLimitesCreditoRevolventes || 0)
+        ),
+        total_past_due: (
+          (response.response.resumenReporte?.[0]?.totalSaldosVencidosPagosFijos || 0) +
+          (response.response.resumenReporte?.[0]?.totalSaldosVencidosRevolventes || 0)
+        ),
+        
+        // Distribución MOP (Historial de pagos)
+        mop_distribution: {
+          mop0: response.response.resumenReporte?.[0]?.numeroMOP0 || "00",
+          mop1: response.response.resumenReporte?.[0]?.numeroMOP1 || "00",
+          mop2: response.response.resumenReporte?.[0]?.numeroMOP2 || "00",
+          mop3: response.response.resumenReporte?.[0]?.numeroMOP3 || "00",
+          mop4: response.response.resumenReporte?.[0]?.numeroMOP4 || "00",
+          mop5: response.response.resumenReporte?.[0]?.numeroMOP5 || "00",
+          mop6: response.response.resumenReporte?.[0]?.numeroMOP6 || "00",
+          mop96: response.response.resumenReporte?.[0]?.numeroMOP96 || "00"
+        },
+        
+        // Metadatos
+        full_response_id: response.id,
+        processed_at: new Date()
+      };
+      
+      // Guardar los datos en la tabla credit_bureau_details
+      const { error } = await supabase
+        .from('credit_bureau_details')
+        .insert(details);
+        
+      if (error) {
+        console.error('[KibanService] Error al guardar detalles del buró:', error);
+        throw new Error('No se pudieron guardar los detalles del buró de crédito');
+      }
+      
+      // Actualizar la aplicación con el score del buró
+      await supabase
+        .from('credit_applications')
+        .update({
+          credit_bureau_score: details.score,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', applicationId);
+        
+      console.log(`[KibanService] Detalles del buró procesados para la aplicación ${applicationId}`);
+      
+    } catch (error) {
+      console.error('[KibanService] Error al procesar datos del buró:', error);
+      throw error;
+    }
+  }
 } 

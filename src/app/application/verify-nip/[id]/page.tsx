@@ -253,6 +253,19 @@ export default async function VerifyNipPage({ params }: { params: { id: string }
             
           console.log('[DEBUG] validateNipWithId - Consulta al buró exitosa:', bureauResponse.id);
           
+          // Procesar y guardar los datos extraídos del buró
+          try {
+            await kibanService.processCreditBureauData(
+              user.id,
+              appData.id,
+              bureauResponse
+            );
+            console.log('[DEBUG] validateNipWithId - Datos del buró procesados y guardados correctamente');
+          } catch (processingError) {
+            console.error('[ERROR] validateNipWithId - Error al procesar datos del buró:', processingError);
+            // No interrumpimos el flujo principal por un error en el procesamiento
+          }
+          
         } catch (bureauApiError: any) {
           // Capturar el error específico de la consulta al buró
           console.error('[ERROR] validateNipWithId - Error en consulta al buró API:', bureauApiError);
