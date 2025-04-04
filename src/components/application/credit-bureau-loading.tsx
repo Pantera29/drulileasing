@@ -5,7 +5,7 @@ import React, { useState, useEffect } from 'react';
 const messages = [
   "Conectando con el buró de crédito...", // 0-5s
   "Verificando historial crediticio...",  // 5-10s
-  "Analizando tu puntuación...",         // 10-15s
+  "Analizando tus datos...",         // 10-15s
   "Procesando resultados..."             // 15-20s
 ];
 
