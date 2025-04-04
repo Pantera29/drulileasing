@@ -8,6 +8,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { CreditBureauLoading } from '@/components/application/credit-bureau-loading';
 
 const NipSchema = z.object({
   nip: z
@@ -37,6 +38,7 @@ interface NipFormProps {
 export function NipForm({ onSubmit, applicationId, kibanRequestId, onResendNip }: NipFormProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isQuerying, setIsQuerying] = useState(false); // Estado para la consulta al buró
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   
@@ -55,13 +57,17 @@ export function NipForm({ onSubmit, applicationId, kibanRequestId, onResendNip }
       const response = await onSubmit(data);
       
       if (response.success) {
-        setSuccessMessage(response.message || 'NIP validado correctamente');
+        // Si la validación fue exitosa, mostrar el estado de consulta al buró
+        setIsQuerying(true);
+        setSuccessMessage('NIP validado correctamente. Consultando buró de crédito...');
         
-        // Redirigir a la página correspondiente después de un breve retraso
+        // Redirigir a la página correspondiente después de que se complete la consulta
         if (response.redirectTo) {
+          // Damos más tiempo para que se complete todo el proceso
           setTimeout(() => {
+            setIsQuerying(false);
             router.push(response.redirectTo as string);
-          }, 1500);
+          }, 20000); // 20 segundos para la consulta y evaluación
         }
       } else {
         setError(response.message || 'Error al validar el NIP');
@@ -107,6 +113,9 @@ export function NipForm({ onSubmit, applicationId, kibanRequestId, onResendNip }
   
   return (
     <div>
+      {/* Componente de carga para consulta al buró */}
+      <CreditBureauLoading isLoading={isQuerying} />
+      
       {successMessage ? (
         <div className="p-4 bg-green-100 text-green-800 rounded-md text-center mb-4">
           {successMessage}
@@ -129,7 +138,7 @@ export function NipForm({ onSubmit, applicationId, kibanRequestId, onResendNip }
                   <FormControl>
                     <Input
                       {...field}
-                      disabled={isSubmitting}
+                      disabled={isSubmitting || isQuerying}
                       placeholder="Ingresa el código de 6 dígitos"
                       maxLength={6}
                       className="text-center text-2xl tracking-widest"
@@ -141,7 +150,7 @@ export function NipForm({ onSubmit, applicationId, kibanRequestId, onResendNip }
             />
             
             <div className="flex flex-col space-y-3">
-              <Button type="submit" disabled={isSubmitting} className="w-full bg-blue-600 hover:bg-blue-700 text-white">
+              <Button type="submit" disabled={isSubmitting || isQuerying} className="w-full bg-blue-600 hover:bg-blue-700 text-white">
                 {isSubmitting ? 'Verificando...' : 'Verificar código'}
               </Button>
               
@@ -150,7 +159,7 @@ export function NipForm({ onSubmit, applicationId, kibanRequestId, onResendNip }
                 variant="ghost" 
                 onClick={handleResendNip} 
                 className="text-sm"
-                disabled={isSubmitting}
+                disabled={isSubmitting || isQuerying}
               >
                 ¿No recibiste el código? Reenviar
               </Button>

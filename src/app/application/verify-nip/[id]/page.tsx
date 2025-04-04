@@ -1,12 +1,18 @@
+import React from 'react';
 import { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { NipForm } from '@/components/application/forms/nip-form';
 
 export const metadata: Metadata = {
-  title: 'Verificación de NIP | Crédito Druli',
-  description: 'Ingresa el NIP que te enviamos por WhatsApp para verificar tu identidad',
+  title: 'Verificación de NIP | Druli',
+  description: 'Verifica tu NIP para continuar con tu solicitud',
 };
+
+// Forzar que esta ruta sea dinámica
+export const dynamic = 'force-dynamic';
+// Indicar el runtime de Node.js
+export const runtime = 'nodejs';
 
 export default async function VerifyNipPage({ params }: { params: { id: string }}) {
   console.log('Inicializando VerifyNipPage para aplicación:', params.id);
@@ -102,7 +108,7 @@ export default async function VerifyNipPage({ params }: { params: { id: string }
     // Ahora intentamos la consulta original con filtro de usuario
     const { data: appData, error: appError } = await supabase
       .from('credit_applications')
-      .select('id, kiban_request_id')
+      .select('id, kiban_request_id, profile_id, contact_id')
       .eq('id', applicationId)
       .eq('user_id', user.id)
       .single();
@@ -129,26 +135,31 @@ export default async function VerifyNipPage({ params }: { params: { id: string }
       const kibanService = new KibanService();
       
       // Validar el NIP con Kiban
-      const isValid = await kibanService.validateNip(
+      const validationResult = await kibanService.validateNip(
         appData.kiban_request_id,
         formData.nip
       );
       
-      console.log('[DEBUG] validateNipWithId - Resultado validación NIP:', isValid ? 'Válido' : 'Inválido');
+      console.log('[DEBUG] validateNipWithId - Resultado validación NIP:', validationResult.isValid ? 'Válido' : 'Inválido');
       
-      if (!isValid) {
+      if (!validationResult.isValid) {
         return {
           success: false,
           message: 'El NIP ingresado no es válido. Intente nuevamente.'
         };
       }
       
+      // Guardar el ID de validación que usaremos para la consulta al buró
+      const validationId = validationResult.validationId;
+      console.log('[DEBUG] validateNipWithId - ID de validación obtenido:', validationId);
+      
       // Registrar la validación en la base de datos
       await kibanService.saveNipValidation(
         user.id,
         appData.id,
         appData.kiban_request_id,
-        true
+        true,
+        validationId
       );
       
       // Actualizar el campo nip_validated en la aplicación
@@ -156,11 +167,117 @@ export default async function VerifyNipPage({ params }: { params: { id: string }
         .from('credit_applications')
         .update({
           nip_validated: true,
+          kiban_validation_id: validationId, // Guardar también el ID de validación
           updated_at: new Date().toISOString()
         })
         .eq('id', appData.id);
       
-      // Iniciar la evaluación de crédito
+      // NUEVO FLUJO: Consultar buró de crédito antes de la evaluación
+      
+      try {
+        // Obtener los datos del perfil del usuario para la consulta al buró
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('full_name, curp_rfc')
+          .eq('id', appData.profile_id)
+          .single();
+          
+        if (profileError || !profile) {
+          console.error('[ERROR] validateNipWithId - Error al obtener perfil:', profileError);
+          throw new Error('No se pudo obtener la información del perfil');
+        }
+        
+        // Obtener la dirección del usuario
+        const { data: address, error: addressError } = await supabase
+          .from('contact_info')
+          .select('street, street_number, neighborhood, city, state, zip_code')
+          .eq('id', appData.contact_id)
+          .single();
+          
+        if (addressError || !address) {
+          console.error('[ERROR] validateNipWithId - Error al obtener dirección:', addressError);
+          throw new Error('No se pudo obtener la información de dirección');
+        }
+        
+        // Formatear la dirección completa como un string
+        const fullAddress = `${address.street} ${address.street_number}, ${address.neighborhood}, ${address.city}, ${address.state}`;
+        
+        // Dividir el nombre completo en partes
+        const nameParts = profile.full_name.trim().split(' ');
+        let firstName = nameParts[0] || '';
+        let secondName = '';
+        let paternalLastName = '';
+        let maternalLastName = '';
+        
+        // Si hay más de 2 partes, asumimos que hay al menos un apellido
+        if (nameParts.length >= 3) {
+          firstName = nameParts[0];
+          secondName = nameParts[1];
+          paternalLastName = nameParts[2];
+          if (nameParts.length >= 4) {
+            maternalLastName = nameParts[3];
+          }
+        } else if (nameParts.length === 2) {
+          // Si solo hay 2 partes, asumimos nombre y apellido
+          firstName = nameParts[0];
+          paternalLastName = nameParts[1];
+        }
+        
+        try {
+          // Consultar al buró de crédito usando el ID de validación (NO el request_id)
+          const bureauResponse = await kibanService.queryCreditBureau(
+            // El ID de validación obtenido durante la validación del NIP
+            validationId || 'invalid-id', // Si no hay ID de validación, fallaremos con un ID inválido
+            {
+              firstName,
+              secondName,
+              paternalLastName,
+              maternalLastName,
+              rfc: profile.curp_rfc,
+              address: {
+                street: fullAddress,
+                zipCode: address.zip_code || '00000'
+              }
+            }
+          );
+          
+          // Guardar la respuesta del buró en la base de datos
+          await supabase
+            .from('credit_applications')
+            .update({
+              credit_bureau_response: bureauResponse,
+              credit_bureau_queried_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', appData.id);
+            
+          console.log('[DEBUG] validateNipWithId - Consulta al buró exitosa:', bureauResponse.id);
+          
+        } catch (bureauApiError: any) {
+          // Capturar el error específico de la consulta al buró
+          console.error('[ERROR] validateNipWithId - Error en consulta al buró API:', bureauApiError);
+          
+          // Registrar el error en la base de datos para diagnóstico
+          await supabase
+            .from('credit_applications')
+            .update({
+              credit_bureau_response: { error: bureauApiError.message || 'Error desconocido en consulta al buró' },
+              credit_bureau_queried_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', appData.id);
+            
+          // No interrumpimos el flujo por este error
+          console.log('[INFO] validateNipWithId - Continuando a pesar del error en consulta al buró');
+        }
+        
+      } catch (bureauError) {
+        console.error('[ERROR] validateNipWithId - Error general en consulta al buró:', bureauError);
+        // No detenemos el flujo por errores en la consulta al buró por ahora
+        // En una implementación real, podríamos manejar esto de manera diferente
+      }
+      
+      // AHORA SÍ: Iniciar la evaluación de crédito después de la consulta al buró
       const { evaluateApplication } = await import('@/lib/services/credit-evaluation');
       await evaluateApplication(appData.id);
       
