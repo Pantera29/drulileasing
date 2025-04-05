@@ -306,6 +306,9 @@ export default async function VerifyNipPage({ params }: { params: { id: string }
       
       if (updatedApp) {
         switch (updatedApp.application_status) {
+          case 'pending_analysis':
+            redirectTo = `/result/analysis/${appData.id}`;
+            break;
           case 'approved':
             redirectTo = `/result/approved/${appData.id}`;
             break;

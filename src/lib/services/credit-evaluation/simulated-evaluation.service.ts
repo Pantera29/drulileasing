@@ -94,52 +94,28 @@ export class SimulatedEvaluationService implements CreditEvaluationService {
     // Generar puntuación crediticia simulada (entre 300 y 850)
     const creditScore = this.generateCreditScore();
     
-    // Aplicar reglas de decisión
-    let status: ApplicationStatus;
-    let approvedAmount: number | undefined;
-    let approvedTerm: number | undefined;
-    let monthlyPayment: number | undefined;
-    let rejectionReason: string | undefined;
+    // MODIFICACIÓN: Todas las solicitudes van a estado pendiente de análisis
+    // en lugar de aplicar las reglas de decisión automáticas
+    const status = ApplicationStatus.PENDING_ANALYSIS;
     
-    // Reglas de decisión simuladas
+    // Guardamos la información original para referencia del analista
+    // pero no tomamos una decisión automática
     const monthlyIncome = data.financialData.monthlyIncome;
-    
-    if (creditScore > 650 && monthlyIncome > 30000) {
-      // APROBADO
-      status = ApplicationStatus.APPROVED;
-      
-      // Determinar porcentaje de aprobación basado en puntuación
-      const approvalPercentage = this.calculateApprovalPercentage(creditScore);
-      approvedAmount = Math.round(data.equipmentData.approximateAmount * approvalPercentage);
-      approvedTerm = data.equipmentData.desiredTerm;
-      
-      // Calcular pago mensual (tasa anual del 15%)
-      const annualRate = 0.15;
-      monthlyPayment = this.calculateMonthlyPayment(approvedAmount, approvedTerm, annualRate);
-      
-    } else if (creditScore > 580 && monthlyIncome > 20000) {
-      // EN REVISIÓN
-      status = ApplicationStatus.IN_REVIEW;
-      
-    } else {
-      // RECHAZADO
-      status = ApplicationStatus.REJECTED;
-      rejectionReason = this.determineRejectionReason(creditScore, monthlyIncome);
-    }
+    const requestedAmount = data.equipmentData.approximateAmount;
+    const requestedTerm = data.equipmentData.desiredTerm;
     
     // Crear resultado
     const result: CreditEvaluationResult = {
       applicationId: data.applicationId,
       status,
       creditScore,
-      approvedAmount,
-      approvedTerm,
-      monthlyPayment,
-      rejectionReason,
       externalProvider: 'simulated',
       externalRequestId: `sim-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       externalResponse: {
         simulatedScore: creditScore,
+        requestedAmount,
+        requestedTerm,
+        monthlyIncome,
         decision: status,
         evaluationTime: new Date().toISOString()
       }
@@ -163,13 +139,9 @@ export class SimulatedEvaluationService implements CreditEvaluationService {
       .update({
         application_status: result.status,
         credit_score: result.creditScore,
-        approved_amount: result.approvedAmount,
-        approved_term: result.approvedTerm,
-        monthly_payment: result.monthlyPayment,
         external_request_id: result.externalRequestId,
         external_provider: result.externalProvider,
         external_response: result.externalResponse,
-        rejection_reason: result.rejectionReason,
         updated_at: new Date().toISOString()
       })
       .eq('id', result.applicationId);

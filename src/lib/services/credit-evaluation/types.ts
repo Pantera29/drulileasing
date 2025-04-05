@@ -3,6 +3,7 @@
 // Estados posibles de una solicitud
 export enum ApplicationStatus {
   PENDING_NIP = 'pending_nip',
+  PENDING_ANALYSIS = 'pending_analysis',
   APPROVED = 'approved',
   IN_REVIEW = 'in_review',
   REJECTED = 'rejected',

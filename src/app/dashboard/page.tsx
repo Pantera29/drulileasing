@@ -114,7 +114,10 @@ export default function DashboardPage() {
                   app.application_status === 'incomplete'
                 ).length;
                 const approved = allApplications.filter(app => app.application_status === 'approved').length;
-                const inReview = allApplications.filter(app => app.application_status === 'in_review').length;
+                const inReview = allApplications.filter(app => 
+                  app.application_status === 'in_review' || 
+                  app.application_status === 'pending_analysis'
+                ).length;
                 const rejected = allApplications.filter(app => app.application_status === 'rejected').length;
                 
                 setPendingCount(pending);
@@ -147,6 +150,8 @@ export default function DashboardPage() {
         return `/result/approved/${app.id}`;
       case 'in_review':
         return `/result/reviewing/${app.id}`;
+      case 'pending_analysis':
+        return `/result/analysis/${app.id}`;
       case 'rejected':
         return `/result/rejected/${app.id}`;
       case 'pending_nip':
@@ -163,6 +168,8 @@ export default function DashboardPage() {
         return 'Aprobada';
       case 'in_review':
         return 'En revisión';
+      case 'pending_analysis':
+        return 'En análisis';
       case 'rejected':
         return 'Rechazada';
       case 'pending_nip':
@@ -288,7 +295,7 @@ export default function DashboardPage() {
             </div>
             
             <div className="bg-white rounded-xl p-6 border shadow-sm">
-              <h3 className="text-xl font-bold mb-2">En revisión</h3>
+              <h3 className="text-xl font-bold mb-2">En análisis</h3>
               {applicationsLoading ? (
                 <p className="text-gray-500">Cargando...</p>
               ) : (
@@ -296,8 +303,8 @@ export default function DashboardPage() {
                   <p className="text-3xl font-bold text-amber-600">{inReviewCount}</p>
                   <p className="text-gray-500 mt-2">
                     {inReviewCount > 0 
-                      ? `Tienes ${inReviewCount} solicitud${inReviewCount !== 1 ? 'es' : ''} en revisión.` 
-                      : 'No tienes solicitudes en revisión.'}
+                      ? `Tienes ${inReviewCount} solicitud${inReviewCount !== 1 ? 'es' : ''} en análisis.` 
+                      : 'No tienes solicitudes en análisis.'}
                   </p>
                 </>
               )}
@@ -354,7 +361,7 @@ export default function DashboardPage() {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
                             ${app.application_status === 'approved' ? 'bg-green-100 text-green-800' : 
-                              app.application_status === 'in_review' ? 'bg-amber-100 text-amber-800' :
+                              app.application_status === 'in_review' || app.application_status === 'pending_analysis' ? 'bg-amber-100 text-amber-800' :
                               app.application_status === 'rejected' ? 'bg-red-100 text-red-800' :
                               'bg-gray-100 text-gray-800'}`}>
                             {getStatusLabel(app.application_status)}
