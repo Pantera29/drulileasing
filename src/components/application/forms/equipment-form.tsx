@@ -6,6 +6,26 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { equipmentSchema, type EquipmentFormData } from '@/lib/schemas/equipment-schema';
 import { StepNavigation } from '@/components/application/layout/step-navigation';
 import { useRouter } from 'next/navigation';
+import { 
+  Card, 
+  CardHeader, 
+  CardContent, 
+  CardFooter 
+} from '@/components/ui/card';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  FormDescription
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Slider } from '@/components/ui/slider';
+import { Button } from '@/components/ui/button';
+import { CheckCircle, Calculator, Laptop } from 'lucide-react';
 
 interface EquipmentFormProps {
   initialData?: Partial<EquipmentFormData>;
@@ -31,31 +51,23 @@ export function EquipmentForm({
     additional_comments: '',
   };
   
-  const {
-    register,
-    handleSubmit,
-    setValue,
-    watch,
-    formState: { errors },
-    getValues,
-    trigger,
-  } = useForm<EquipmentFormData>({
+  const form = useForm<EquipmentFormData>({
     resolver: zodResolver(equipmentSchema),
     defaultValues,
   });
   
   // Monitorear el valor actual del monto
-  const currentAmount = watch('approximate_amount');
-  const currentTerm = watch('desired_term');
+  const currentAmount = form.watch('approximate_amount');
+  const currentTerm = form.watch('desired_term');
   
   // Configurar valores por defecto al cargar
   useEffect(() => {
     // Ya no necesitamos establecer estos valores porque los campos ya no existen
     // Solo aseguramos que el monto sea válido
     if (!currentAmount || currentAmount < 10000) {
-      setValue('approximate_amount', 10000, { shouldValidate: true });
+      form.setValue('approximate_amount', 10000, { shouldValidate: true });
     }
-  }, [setValue, currentAmount]);
+  }, [form.setValue, currentAmount]);
   
   const handleFormSubmit = async (data: EquipmentFormData) => {
     setIsSubmitting(true);
@@ -105,7 +117,7 @@ export function EquipmentForm({
     console.log('Guardando datos del formulario de equipo...');
     try {
       // Utilizar handleSubmit para validar y procesar el formulario
-      const success = await handleSubmit(async (data) => {
+      const success = await form.handleSubmit(async (data) => {
         // Procesar directamente aquí para evitar problemas con retorno de valores
         return await handleFormSubmit(data);
       })();
@@ -172,17 +184,21 @@ export function EquipmentForm({
   const monthlyPayment = calculateMonthlyPayment();
 
   return (
-    <div>
-      <form onSubmit={(e) => {
-        e.preventDefault();
-        handleSubmit(handleFormSubmit)();
-      }}>
-        <h2 className="text-xl font-semibold text-gray-800 mb-6">
+    <Card className="w-full shadow-md border-gray-200">
+      <CardHeader className="pb-4">
+        <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
+          <Laptop className="h-5 w-5 text-blue-500" />
           Equipo de Interés
         </h2>
-        
+        <p className="text-sm text-gray-500">
+          Configura los detalles de tu financiamiento médico
+        </p>
+      </CardHeader>
+      
+      <CardContent className="pt-6">
         {saveSuccess && (
-          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-md">
+          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-md flex items-center gap-2">
+            <CheckCircle className="text-green-500 h-5 w-5" />
             <p className="text-green-800 text-sm font-medium">
               ¡Datos guardados correctamente! Redirigiendo al siguiente paso...
             </p>
@@ -197,126 +213,129 @@ export function EquipmentForm({
           </div>
         )}
         
-        <div className="space-y-6">
-          {/* Eliminamos el selector de equipo y lo reemplazamos con el título */}
-          <div className="border-b pb-6">
-            <h3 className="font-medium text-gray-700 mb-4">
-              Información del financiamiento:
-            </h3>
-          </div>
-          
-          {/* Monto y plazo */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label 
-                htmlFor="approximate_amount" 
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Monto aproximado (MXN)
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <span className="text-gray-500 sm:text-sm">$</span>
-                </div>
-                <input
-                  id="approximate_amount"
-                  type="number"
-                  min="10000"
-                  step="1000"
-                  defaultValue={100000}
-                  {...register('approximate_amount', { 
-                    valueAsNumber: true,
-                    min: 10000
-                  })}
-                  className="block w-full pl-7 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  placeholder="100000"
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
+            {/* Información del financiamiento */}
+            <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
+              <div className="flex items-center gap-2 mb-4">
+                <Calculator className="h-5 w-5 text-gray-600" />
+                <h3 className="font-medium text-gray-700">
+                  Información del financiamiento
+                </h3>
+              </div>
+              
+              {/* Monto y plazo */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                  control={form.control}
+                  name="approximate_amount"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Monto aproximado (MXN)</FormLabel>
+                      <FormControl>
+                        <div className="relative flex items-center">
+                          <span className="absolute left-3 text-gray-500">$</span>
+                          <Input
+                            type="number"
+                            min="10000"
+                            step="1000"
+                            className="pl-7 w-full"
+                            {...field}
+                            onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                            value={field.value || 10000}
+                          />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="desired_term"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Plazo deseado (meses)</FormLabel>
+                      <Select
+                        onValueChange={(value) => field.onChange(parseInt(value))}
+                        defaultValue={field.value?.toString()}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Selecciona un plazo" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-white">
+                          <SelectItem value="12">12 meses</SelectItem>
+                          <SelectItem value="24">24 meses</SelectItem>
+                          <SelectItem value="36">36 meses</SelectItem>
+                          <SelectItem value="48">48 meses</SelectItem>
+                          <SelectItem value="60">60 meses</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
               </div>
-              {errors.approximate_amount && (
-                <p className="mt-1 text-sm text-red-600">
-                  {errors.approximate_amount.message}
-                </p>
-              )}
-            </div>
-            
-            <div>
-              <label 
-                htmlFor="desired_term" 
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Plazo deseado (meses)
-              </label>
-              <select
-                id="desired_term"
-                {...register('desired_term', { 
-                  valueAsNumber: true
-                })}
-                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              >
-                <option value="12">12 meses</option>
-                <option value="24">24 meses</option>
-                <option value="36">36 meses</option>
-                <option value="48">48 meses</option>
-                <option value="60">60 meses</option>
-              </select>
-              {errors.desired_term && (
-                <p className="mt-1 text-sm text-red-600">
-                  {errors.desired_term.message}
-                </p>
-              )}
-            </div>
-          </div>
-          
-          {/* Información de pago estimado */}
-          {currentAmount > 0 && currentTerm > 0 && (
-            <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
-              <h4 className="text-sm font-medium text-blue-800">
-                Pago mensual estimado*
-              </h4>
-              <p className="text-2xl font-bold text-blue-900 mt-1">
-                {formatCurrency(monthlyPayment)}
-              </p>
-              <div className="flex justify-between mt-2">
-                <p className="text-xs text-blue-500">
-                  *Este es un cálculo aproximado. El monto final dependerá de la evaluación de crédito.
-                </p>
-                <p className="text-xs font-medium text-blue-700">
-                  Tasa anual: {(calculateInterestRate(currentAmount, currentTerm) * 100).toFixed(1)}%
+              
+              {/* Cálculo de pagos */}
+              <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-100">
+                <h4 className="font-medium text-blue-800 mb-2">
+                  Cálculo aproximado
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <p className="text-sm text-blue-600">Monto a financiar</p>
+                    <p className="text-lg font-semibold">{formatCurrency(currentAmount || 0)}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-blue-600">Pago mensual</p>
+                    <p className="text-lg font-semibold">{formatCurrency(monthlyPayment)}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-blue-600">Tasa anual</p>
+                    <p className="text-lg font-semibold">
+                      {(calculateInterestRate(currentAmount || 0, currentTerm || 24) * 100).toFixed(1)}%
+                    </p>
+                  </div>
+                </div>
+                <p className="mt-4 text-xs text-blue-600">
+                  *Este es un cálculo aproximado. La tasa final y condiciones serán confirmadas después de la aprobación.
                 </p>
               </div>
             </div>
-          )}
-          
-          {/* Comentarios adicionales */}
-          <div>
-            <label 
-              htmlFor="additional_comments" 
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              Comentarios adicionales (opcional)
-            </label>
-            <textarea
-              id="additional_comments"
-              rows={3}
-              {...register('additional_comments')}
-              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              placeholder="Especificaciones o requerimientos especiales"
+            
+            {/* Comentarios adicionales */}
+            <FormField
+              control={form.control}
+              name="additional_comments"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Comentarios adicionales (opcional)</FormLabel>
+                  <FormControl>
+                    <textarea 
+                      className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 min-h-[100px]"
+                      placeholder="¿Hay algo más que quieras comentarnos sobre el equipo o financiamiento?"
+                      {...field}
+                      value={field.value || ''}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-            {errors.additional_comments && (
-              <p className="mt-1 text-sm text-red-600">
-                {errors.additional_comments.message}
-              </p>
-            )}
-          </div>
-        </div>
-        
-        <StepNavigation 
-          currentStep={4} 
+          </form>
+        </Form>
+      </CardContent>
+      
+      <CardFooter className="flex justify-between pt-4 border-t border-gray-100">
+        <StepNavigation
+          currentStep={4}
           totalSteps={5}
           onSave={handleStepSave}
           isSubmitting={isSubmitting}
         />
-      </form>
-    </div>
+      </CardFooter>
+    </Card>
   );
 } 

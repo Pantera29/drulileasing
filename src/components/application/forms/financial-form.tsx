@@ -7,6 +7,24 @@ import { financialSchema, type FinancialFormData } from '@/lib/schemas/financial
 import { StepNavigation } from '@/components/application/layout/step-navigation';
 import { FileUploader } from '@/components/application/ui/file-uploader';
 import { useRouter } from 'next/navigation';
+import { 
+  Card, 
+  CardHeader, 
+  CardContent, 
+  CardFooter 
+} from '@/components/ui/card';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  FormDescription
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { CheckCircle, BanknoteIcon, ArrowUpIcon } from 'lucide-react';
 
 interface FinancialFormProps {
   initialData?: Partial<FinancialFormData>;
@@ -36,12 +54,7 @@ export function FinancialForm({
     income_proof_url: initialData?.income_proof_url || '',
   };
   
-  const {
-    register,
-    handleSubmit,
-    setValue,
-    formState: { errors },
-  } = useForm<FinancialFormData>({
+  const form = useForm<FinancialFormData>({
     resolver: zodResolver(financialSchema),
     defaultValues,
   });
@@ -49,7 +62,7 @@ export function FinancialForm({
   // Función para manejar cambios en el archivo subido
   const handleFileUploaded = (url: string) => {
     setIncomeProofUrl(url);
-    setValue('income_proof_url', url, { shouldValidate: true });
+    form.setValue('income_proof_url', url, { shouldValidate: true });
   };
   
   const handleFormSubmit = async (data: FinancialFormData) => {
@@ -92,7 +105,7 @@ export function FinancialForm({
   const handleStepSave = async () => {
     console.log('Guardando datos del formulario financiero...');
     try {
-      const result = await handleSubmit(handleFormSubmit)();
+      const result = await form.handleSubmit(handleFormSubmit)();
       // Si handleSubmit no devuelve nada, asumimos que fue exitoso (no hubo errores de validación)
       return result !== undefined ? result : true;
     } catch (error) {
@@ -114,17 +127,21 @@ export function FinancialForm({
   };
 
   return (
-    <div>
-      <form onSubmit={(e) => {
-        e.preventDefault();
-        handleSubmit(handleFormSubmit)();
-      }}>
-        <h2 className="text-xl font-semibold text-gray-800 mb-6">
+    <Card className="w-full shadow-md border-gray-200">
+      <CardHeader className="pb-4">
+        <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
+          <BanknoteIcon className="h-5 w-5 text-green-500" />
           Información Financiera
         </h2>
-        
+        <p className="text-sm text-gray-500">
+          Cuéntanos sobre tu situación financiera y capacidad de pago
+        </p>
+      </CardHeader>
+      
+      <CardContent className="pt-6">
         {saveSuccess && (
-          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-md">
+          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-md flex items-center gap-2">
+            <CheckCircle className="text-green-500 h-5 w-5" />
             <p className="text-green-800 text-sm font-medium">
               ¡Datos guardados correctamente! Redirigiendo al siguiente paso...
             </p>
@@ -139,168 +156,196 @@ export function FinancialForm({
           </div>
         )}
         
-        <div className="space-y-6">
-          {/* Ocupación y empresa */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label 
-                htmlFor="occupation" 
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Ocupación / Profesión
-              </label>
-              <input
-                id="occupation"
-                type="text"
-                {...register('occupation')}
-                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                placeholder="Ej: Médico, Contador, etc."
-              />
-              {errors.occupation && (
-                <p className="mt-1 text-sm text-red-600">
-                  {errors.occupation.message}
-                </p>
-              )}
-            </div>
-            
-            <div>
-              <label 
-                htmlFor="company_name" 
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Empresa o Consultorio
-              </label>
-              <input
-                id="company_name"
-                type="text"
-                {...register('company_name')}
-                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                placeholder="Nombre del lugar donde trabaja"
-              />
-              {errors.company_name && (
-                <p className="mt-1 text-sm text-red-600">
-                  {errors.company_name.message}
-                </p>
-              )}
-            </div>
-          </div>
-          
-          {/* Tiempo de empleo */}
-          <div>
-            <label 
-              htmlFor="employment_time" 
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              Antigüedad laboral
-            </label>
-            <input
-              id="employment_time"
-              type="text"
-              {...register('employment_time')}
-              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              placeholder="Ej: 2 años, 6 meses"
-            />
-            {errors.employment_time && (
-              <p className="mt-1 text-sm text-red-600">
-                {errors.employment_time.message}
-              </p>
-            )}
-          </div>
-          
-          {/* Ingresos */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label 
-                htmlFor="monthly_income" 
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Ingreso mensual (MXN)
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <span className="text-gray-500 sm:text-sm">$</span>
-                </div>
-                <input
-                  id="monthly_income"
-                  type="number"
-                  min="0"
-                  step="1000"
-                  {...register('monthly_income', { 
-                    valueAsNumber: true
-                  })}
-                  className="block w-full pl-7 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  placeholder="0.00"
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
+            {/* Información laboral */}
+            <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
+              <h3 className="font-medium text-gray-700 mb-4">Información Laboral</h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="occupation"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Ocupación / Profesión</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="Ej: Médico, Contador, etc." 
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="company_name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Empresa o Consultorio</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="Nombre del lugar donde trabaja" 
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
               </div>
-              {errors.monthly_income && (
-                <p className="mt-1 text-sm text-red-600">
-                  {errors.monthly_income.message}
-                </p>
-              )}
-            </div>
-            
-            <div>
-              <label 
-                htmlFor="additional_income" 
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Ingresos adicionales (opcional)
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <span className="text-gray-500 sm:text-sm">$</span>
-                </div>
-                <input
-                  id="additional_income"
-                  type="number"
-                  min="0"
-                  step="1000"
-                  {...register('additional_income', { 
-                    valueAsNumber: true
-                  })}
-                  className="block w-full pl-7 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  placeholder="0.00"
+              
+              <div className="mt-4">
+                <FormField
+                  control={form.control}
+                  name="employment_time"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Antigüedad laboral</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="Ej: 2 años, 6 meses" 
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
               </div>
-              {errors.additional_income && (
-                <p className="mt-1 text-sm text-red-600">
-                  {errors.additional_income.message}
-                </p>
+            </div>
+            
+            {/* Información de ingresos */}
+            <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
+              <h3 className="font-medium text-gray-700 mb-4">Información de Ingresos</h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <FormField
+                    control={form.control}
+                    name="monthly_income"
+                    render={({ field }) => (
+                      <FormItem className="h-full flex flex-col">
+                        <FormLabel>Ingreso mensual (MXN)</FormLabel>
+                        <FormControl>
+                          <div className="relative flex items-center flex-grow">
+                            <span className="absolute left-3 text-gray-500">$</span>
+                            <Input
+                              type="number"
+                              min="0"
+                              step="1000"
+                              className="pl-7 w-full"
+                              placeholder="0.00"
+                              {...field}
+                              onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                              value={field.value || ''}
+                            />
+                          </div>
+                        </FormControl>
+                        <div className="mt-1">
+                          <FormDescription>
+                            Ingreso principal mensual después de impuestos
+                          </FormDescription>
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                
+                <div>
+                  <FormField
+                    control={form.control}
+                    name="additional_income"
+                    render={({ field }) => (
+                      <FormItem className="h-full flex flex-col">
+                        <FormLabel>Ingresos adicionales (opcional)</FormLabel>
+                        <FormControl>
+                          <div className="relative flex items-center flex-grow">
+                            <span className="absolute left-3 text-gray-500">$</span>
+                            <Input
+                              type="number"
+                              min="0"
+                              step="1000"
+                              className="pl-7 w-full"
+                              placeholder="0.00"
+                              {...field}
+                              onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                              value={field.value || ''}
+                            />
+                          </div>
+                        </FormControl>
+                        <div className="mt-1">
+                          <FormDescription>
+                            Otros ingresos que puedas comprobar
+                          </FormDescription>
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+            </div>
+            
+            {/* Comprobante de ingresos */}
+            <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
+              <h3 className="font-medium text-gray-700 mb-4">Comprobante de Ingresos</h3>
+              
+              <FormField
+                control={form.control}
+                name="income_proof_url"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Sube un comprobante de ingresos
+                    </FormLabel>
+                    <FormControl>
+                      <div>
+                        <FileUploader
+                          onFileUploaded={handleFileUploaded}
+                          userId={userId}
+                          bucketName="druli1"
+                          folderPath="income_proofs"
+                          fileType="income_proof"
+                          existingFileUrl={incomeProofUrl}
+                          allowedFileTypes={['.pdf', '.jpg', '.jpeg', '.png']}
+                          maxSizeMB={5}
+                        />
+                      </div>
+                    </FormControl>
+                    <FormDescription>
+                      Puedes subir estados de cuenta, recibos de nómina, o declaraciones de impuestos.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              {incomeProofUrl && (
+                <div className="mt-2 p-2 bg-blue-50 rounded-md border border-blue-100 flex items-center gap-2">
+                  <CheckCircle className="text-blue-500 h-4 w-4" />
+                  <p className="text-blue-800 text-sm">
+                    Comprobante cargado exitosamente
+                  </p>
+                </div>
               )}
             </div>
-          </div>
-          
-          {/* Comprobante de ingresos */}
-          <div>
-            <label 
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              Comprobante de ingresos
-            </label>
-            <p className="text-sm text-gray-500 mb-2">
-              Sube un documento que compruebe tus ingresos (recibo de nómina, estados de cuenta, declaración fiscal, etc.)
-            </p>
-            
-            <FileUploader
-              bucketName="druli1"
-              folderPath="income_proofs"
-              fileType="income_proof"
-              userId={userId}
-              onFileUploaded={handleFileUploaded}
-              existingFileUrl={initialData?.income_proof_url || null}
-              allowedFileTypes={['.pdf', '.jpg', '.jpeg', '.png']}
-              maxSizeMB={5}
-            />
-          </div>
-        </div>
-        
-        <StepNavigation 
-          currentStep={3} 
+          </form>
+        </Form>
+      </CardContent>
+      
+      <CardFooter className="flex justify-between pt-4 border-t border-gray-100">
+        <StepNavigation
+          currentStep={3}
           totalSteps={5}
           onSave={handleStepSave}
           isSubmitting={isSubmitting}
         />
-      </form>
-    </div>
+      </CardFooter>
+    </Card>
   );
 } 
