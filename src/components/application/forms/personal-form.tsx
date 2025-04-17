@@ -131,8 +131,8 @@ export function PersonalForm({ initialData, onSubmit, applicationId }: PersonalF
 
   return (
     <Card className="w-full shadow-md border-gray-200">
-      <CardHeader className="pb-4">
-        <h2 className="text-xl font-semibold text-gray-800">
+      <CardHeader className="pb-2">
+        <h2 className="text-xl font-semibold text-gray-800 mb-1">
           Datos Personales
         </h2>
         <p className="text-sm text-gray-500">
@@ -140,9 +140,9 @@ export function PersonalForm({ initialData, onSubmit, applicationId }: PersonalF
         </p>
       </CardHeader>
 
-      <CardContent className="pt-6">
+      <CardContent className="pt-2">
         {saveSuccess && (
-          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-md flex items-center gap-2">
+          <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md flex items-center gap-2">
             <CheckCircle className="text-green-500 h-5 w-5" />
             <p className="text-green-800 text-sm font-medium">
               ¡Datos guardados correctamente! Redirigiendo al siguiente paso...
@@ -151,7 +151,7 @@ export function PersonalForm({ initialData, onSubmit, applicationId }: PersonalF
         )}
         
         {saveError && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md">
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
             <p className="text-red-800 text-sm font-medium">
               {saveError}
             </p>
@@ -159,7 +159,7 @@ export function PersonalForm({ initialData, onSubmit, applicationId }: PersonalF
         )}
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
+          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-3">
             <FormField
               control={form.control}
               name="full_name"
@@ -253,7 +253,7 @@ export function PersonalForm({ initialData, onSubmit, applicationId }: PersonalF
               control={form.control}
               name="dependents"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="mb-4">
                   <FormLabel>Número de dependientes económicos</FormLabel>
                   <FormControl>
                     <Input
@@ -271,18 +271,18 @@ export function PersonalForm({ initialData, onSubmit, applicationId }: PersonalF
                 </FormItem>
               )}
             />
+
+            <div className="flex justify-between items-center">
+              <StepNavigation
+                currentStep={1}
+                totalSteps={5}
+                onSave={handleStepSave}
+                isSubmitting={isSubmitting}
+              />
+            </div>
           </form>
         </Form>
       </CardContent>
-      
-      <CardFooter className="flex justify-between pt-4 border-t border-gray-100">
-        <StepNavigation
-          currentStep={1}
-          totalSteps={5}
-          onSave={handleStepSave}
-          isSubmitting={isSubmitting}
-        />
-      </CardFooter>
     </Card>
   );
 } 

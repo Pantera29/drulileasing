@@ -1,6 +1,6 @@
 import React from 'react';
 import { ProgressBar } from './progress-bar';
-import Image from 'next/image';
+import Link from 'next/link';
 
 interface ApplicationLayoutProps {
   children: React.ReactNode;
@@ -12,14 +12,10 @@ export function ApplicationLayout({ children }: ApplicationLayoutProps) {
       <header className="bg-white shadow-sm py-4">
         <div className="container mx-auto px-4 flex justify-between items-center">
           <div className="flex items-center">
-            {/* Logo de Druli - Asegúrate de tener la imagen en public/logo.png */}
-            <Image 
-              src="/logo.png" 
-              alt="Druli" 
-              width={120} 
-              height={40} 
-              className="h-10 w-auto"
-            />
+            <Link href="/" className="flex items-center space-x-2">
+              <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-blue-600 to-blue-500 flex items-center justify-center text-white font-bold text-lg">D</div>
+              <span className="font-bold text-xl">Druli</span>
+            </Link>
           </div>
         </div>
       </header>

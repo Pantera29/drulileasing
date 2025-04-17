@@ -2,6 +2,8 @@
 
 import React from 'react';
 import { usePathname } from 'next/navigation';
+import { cn } from "@/lib/utils";
+import { CheckIcon } from "lucide-react";
 
 // Definición de los pasos del formulario
 const steps = [
@@ -34,100 +36,69 @@ const steps = [
 
 export function ProgressBar() {
   const pathname = usePathname();
-  
-  // Extraer el número de paso actual de la ruta
   const currentStepMatch = pathname.match(/\/step\/(\d+)/);
   const currentStep = currentStepMatch ? parseInt(currentStepMatch[1], 10) : 0;
   
   return (
-    <div className="py-4">
-      <div className="hidden sm:block">
-        <nav aria-label="Progress">
-          <ol role="list" className="flex items-center">
-            {steps.map((step, stepIdx) => (
-              <li 
-                key={step.id} 
-                className={`relative ${stepIdx !== steps.length - 1 ? 'flex-1' : ''}`}
-              >
-                {step.id < currentStep ? (
-                  // Paso completado
-                  <div className="group flex items-center">
-                    <span className="flex-shrink-0 h-10 w-10 flex items-center justify-center bg-green-600 rounded-full">
-                      <svg 
-                        className="h-6 w-6 text-white" 
-                        fill="none" 
-                        viewBox="0 0 24 24" 
-                        stroke="currentColor"
-                      >
-                        <path 
-                          strokeLinecap="round" 
-                          strokeLinejoin="round" 
-                          strokeWidth={2} 
-                          d="M5 13l4 4L19 7" 
-                        />
-                      </svg>
-                    </span>
-                    {stepIdx !== steps.length - 1 ? (
-                      <div className="ml-4 min-w-0 flex-1">
-                        <div className="h-0.5 w-full bg-green-600">
-                        </div>
-                      </div>
-                    ) : null}
-                  </div>
-                ) : step.id === currentStep ? (
-                  // Paso actual
-                  <div className="group flex items-center" aria-current="step">
-                    <span className="flex-shrink-0 h-10 w-10 flex items-center justify-center border-2 border-blue-600 rounded-full">
-                      <span className="text-blue-600 font-medium">{step.id}</span>
-                    </span>
-                    <span className="ml-3 text-sm font-medium text-blue-600">
-                      {step.name}
-                    </span>
-                    {stepIdx !== steps.length - 1 ? (
-                      <div className="ml-4 min-w-0 flex-1">
-                        <div className="h-0.5 w-full bg-gray-200">
-                        </div>
-                      </div>
-                    ) : null}
-                  </div>
-                ) : (
-                  // Paso pendiente
-                  <div className="group flex items-center">
-                    <span className="flex-shrink-0 h-10 w-10 flex items-center justify-center border-2 border-gray-300 rounded-full">
-                      <span className="text-gray-500">{step.id}</span>
-                    </span>
-                    <span className="ml-3 text-sm font-medium text-gray-500">
-                      {step.name}
-                    </span>
-                    {stepIdx !== steps.length - 1 ? (
-                      <div className="ml-4 min-w-0 flex-1">
-                        <div className="h-0.5 w-full bg-gray-200">
-                        </div>
-                      </div>
-                    ) : null}
-                  </div>
-                )}
-              </li>
+    <div className="w-full py-4">
+      {/* Versión desktop */}
+      <div className="hidden md:block">
+        <div className="relative">
+          {/* Línea de progreso base */}
+          <div className="absolute top-5 left-0 w-full h-[2px] flex justify-between">
+            {Array.from({ length: steps.length - 1 }).map((_, idx) => (
+              <div key={idx} className="flex-1 mx-4">
+                <div className="w-full h-full border-t-2 border-dashed border-gray-200" />
+              </div>
             ))}
-          </ol>
-        </nav>
+          </div>
+          
+          {/* Pasos */}
+          <div className="relative flex justify-between">
+            {steps.map((step) => {
+              const isCompleted = step.id < currentStep;
+              const isCurrent = step.id === currentStep;
+              
+              return (
+                <div key={step.id} className="flex flex-col items-center">
+                  <div className={cn(
+                    "flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-300",
+                    isCompleted ? "bg-blue-600 text-white" : 
+                    isCurrent ? "border-2 border-blue-600 bg-white text-blue-600" :
+                    "border border-gray-200 bg-white text-gray-400"
+                  )}>
+                    <span className="text-sm font-medium">{step.id}</span>
+                    <span className={cn(
+                      "text-sm font-medium whitespace-nowrap",
+                      isCompleted ? "text-white" :
+                      isCurrent ? "text-blue-600" :
+                      "text-gray-400"
+                    )}>
+                      {step.name}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </div>
       
-      {/* Versión móvil - Simplificada */}
-      <div className="sm:hidden">
-        <div className="text-center mb-4">
-          <p className="text-sm font-medium text-gray-500">
+      {/* Versión móvil */}
+      <div className="md:hidden">
+        <div className="flex flex-col items-center">
+          <p className="text-sm font-medium text-gray-500 mb-1">
             Paso {currentStep} de {steps.length}
           </p>
-          <h3 className="text-lg font-medium leading-6 text-gray-900">
-            {steps.find(step => step.id === currentStep)?.name || 'Solicitud de Arrendamiento'}
+          <h3 className="text-lg font-medium text-gray-900 mb-3">
+            {steps.find(step => step.id === currentStep)?.name}
           </h3>
-        </div>
-        <div className="w-full bg-gray-200 rounded-full h-2.5">
-          <div 
-            className="bg-blue-600 h-2.5 rounded-full" 
-            style={{ width: `${(currentStep / steps.length) * 100}%` }}
-          ></div>
+          <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+            <div 
+              className="h-full bg-blue-600 transition-all duration-300 rounded-full"
+              style={{ width: `${(currentStep / steps.length) * 100}%` }}
+            />
+          </div>
         </div>
       </div>
     </div>

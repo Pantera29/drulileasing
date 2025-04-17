@@ -128,8 +128,8 @@ export function FinancialForm({
 
   return (
     <Card className="w-full shadow-md border-gray-200">
-      <CardHeader className="pb-4">
-        <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
+      <CardHeader className="pb-2">
+        <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2 mb-1">
           <BanknoteIcon className="h-5 w-5 text-green-500" />
           Información Financiera
         </h2>
@@ -138,7 +138,7 @@ export function FinancialForm({
         </p>
       </CardHeader>
       
-      <CardContent className="pt-6">
+      <CardContent className="pt-2">
         {saveSuccess && (
           <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-md flex items-center gap-2">
             <CheckCircle className="text-green-500 h-5 w-5" />
@@ -157,12 +157,16 @@ export function FinancialForm({
         )}
         
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
+          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4">
             {/* Información laboral */}
-            <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
-              <h3 className="font-medium text-gray-700 mb-4">Información Laboral</h3>
+            <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+              <div className="flex items-center gap-2 mb-2">
+                <h3 className="font-medium text-gray-700">
+                  Información Laboral
+                </h3>
+              </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <FormField
                   control={form.control}
                   name="occupation"
@@ -198,7 +202,7 @@ export function FinancialForm({
                 />
               </div>
               
-              <div className="mt-4">
+              <div className="mt-3">
                 <FormField
                   control={form.control}
                   name="employment_time"
@@ -219,81 +223,73 @@ export function FinancialForm({
             </div>
             
             {/* Información de ingresos */}
-            <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
-              <h3 className="font-medium text-gray-700 mb-4">Información de Ingresos</h3>
+            <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+              <h3 className="font-medium text-gray-700 mb-2">Información de Ingresos</h3>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <FormField
-                    control={form.control}
-                    name="monthly_income"
-                    render={({ field }) => (
-                      <FormItem className="h-full flex flex-col">
-                        <FormLabel>Ingreso mensual (MXN)</FormLabel>
-                        <FormControl>
-                          <div className="relative flex items-center flex-grow">
-                            <span className="absolute left-3 text-gray-500">$</span>
-                            <Input
-                              type="number"
-                              min="0"
-                              step="1000"
-                              className="pl-7 w-full"
-                              placeholder="0.00"
-                              {...field}
-                              onChange={(e) => field.onChange(parseFloat(e.target.value))}
-                              value={field.value || ''}
-                            />
-                          </div>
-                        </FormControl>
-                        <div className="mt-1">
-                          <FormDescription>
-                            Ingreso principal mensual después de impuestos
-                          </FormDescription>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <FormField
+                  control={form.control}
+                  name="monthly_income"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Ingreso mensual (MXN)</FormLabel>
+                      <FormControl>
+                        <div className="relative flex items-center">
+                          <span className="absolute left-3 text-gray-500">$</span>
+                          <Input
+                            type="number"
+                            min="0"
+                            step="1000"
+                            className="pl-7"
+                            placeholder="0.00"
+                            {...field}
+                            onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                            value={field.value || ''}
+                          />
                         </div>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+                      </FormControl>
+                      <FormDescription className="text-xs">
+                        Ingreso principal mensual después de impuestos
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 
-                <div>
-                  <FormField
-                    control={form.control}
-                    name="additional_income"
-                    render={({ field }) => (
-                      <FormItem className="h-full flex flex-col">
-                        <FormLabel>Ingresos adicionales (opcional)</FormLabel>
-                        <FormControl>
-                          <div className="relative flex items-center flex-grow">
-                            <span className="absolute left-3 text-gray-500">$</span>
-                            <Input
-                              type="number"
-                              min="0"
-                              step="1000"
-                              className="pl-7 w-full"
-                              placeholder="0.00"
-                              {...field}
-                              onChange={(e) => field.onChange(parseFloat(e.target.value))}
-                              value={field.value || ''}
-                            />
-                          </div>
-                        </FormControl>
-                        <div className="mt-1">
-                          <FormDescription>
-                            Otros ingresos que puedas comprobar
-                          </FormDescription>
+                <FormField
+                  control={form.control}
+                  name="additional_income"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Ingresos adicionales (opcional)</FormLabel>
+                      <FormControl>
+                        <div className="relative flex items-center">
+                          <span className="absolute left-3 text-gray-500">$</span>
+                          <Input
+                            type="number"
+                            min="0"
+                            step="1000"
+                            className="pl-7"
+                            placeholder="0.00"
+                            {...field}
+                            onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                            value={field.value || ''}
+                          />
                         </div>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+                      </FormControl>
+                      <FormDescription className="text-xs">
+                        Otros ingresos que puedas comprobar
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
             </div>
             
             {/* Comprobante de ingresos */}
-            <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
-              <h3 className="font-medium text-gray-700 mb-4">Comprobante de Ingresos</h3>
+            <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+              <h3 className="font-medium text-gray-700 mb-2">Comprobante de Ingresos</h3>
               
               <FormField
                 control={form.control}
@@ -317,22 +313,13 @@ export function FinancialForm({
                         />
                       </div>
                     </FormControl>
-                    <FormDescription>
+                    <FormDescription className="text-xs">
                       Puedes subir estados de cuenta, recibos de nómina, o declaraciones de impuestos.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              
-              {incomeProofUrl && (
-                <div className="mt-2 p-2 bg-blue-50 rounded-md border border-blue-100 flex items-center gap-2">
-                  <CheckCircle className="text-blue-500 h-4 w-4" />
-                  <p className="text-blue-800 text-sm">
-                    Comprobante cargado exitosamente
-                  </p>
-                </div>
-              )}
             </div>
           </form>
         </Form>

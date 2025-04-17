@@ -75,52 +75,15 @@ export function StepNavigation({
   const isDisabled = isSubmitting || isNavigating;
   
   return (
-    <div className="mt-8 pt-5 border-t border-gray-200 flex justify-between items-center">
-      <div>
-        {currentStep > 1 && (
-          <Link
-            href={`/application/step/${currentStep - 1}`}
-            className={`inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 ${isDisabled ? 'opacity-50 pointer-events-none' : ''}`}
-            onClick={(e) => {
-              if (isDisabled) {
-                e.preventDefault();
-              }
-            }}
-          >
-            <svg 
-              className="mr-2 h-5 w-5" 
-              xmlns="http://www.w3.org/2000/svg" 
-              viewBox="0 0 20 20" 
-              fill="currentColor"
-            >
-              <path 
-                fillRule="evenodd" 
-                d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" 
-                clipRule="evenodd" 
-              />
-            </svg>
-            Anterior
-          </Link>
-        )}
-      </div>
-      
-      <div className="flex space-x-3">
-        <button
-          type="button"
-          onClick={handleSaveAndExit}
-          disabled={isDisabled}
-          className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
-        >
-          {isNavigating ? 'Guardando...' : 'Guardar y salir'}
-        </button>
-        
+    <div className="w-full flex justify-center mt-4">
+      <button
+        type="button"
+        onClick={currentStep < totalSteps ? handleNext : onSave}
+        disabled={isDisabled}
+        className="inline-flex items-center px-6 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
+      >
         {currentStep < totalSteps ? (
-          <button
-            type="button"
-            onClick={handleNext}
-            disabled={isDisabled}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
-          >
+          <>
             {isNavigating ? 'Guardando...' : 'Siguiente'}
             {!isNavigating && (
               <svg 
@@ -136,14 +99,9 @@ export function StepNavigation({
                 />
               </svg>
             )}
-          </button>
+          </>
         ) : (
-          <button
-            type="button"
-            onClick={onSave}
-            disabled={isDisabled}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 disabled:opacity-50"
-          >
+          <>
             {isSubmitting || isNavigating ? (
               <>
                 <svg 
@@ -171,9 +129,9 @@ export function StepNavigation({
             ) : (
               nextButtonText || 'Finalizar solicitud'
             )}
-          </button>
+          </>
         )}
-      </div>
+      </button>
     </div>
   );
 } 

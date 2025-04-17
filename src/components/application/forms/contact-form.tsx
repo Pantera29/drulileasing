@@ -30,6 +30,7 @@ import {
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, MapPin } from 'lucide-react';
+import { MapPinIcon } from 'lucide-react';
 
 interface ContactFormProps {
   initialData?: Partial<ContactFormData>;
@@ -107,19 +108,19 @@ export function ContactForm({ initialData, onSubmit, applicationId }: ContactFor
 
   return (
     <Card className="w-full shadow-md border-gray-200">
-      <CardHeader className="pb-4">
-        <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
-          <MapPin className="h-5 w-5 text-blue-500" />
-          Información de Contacto
+      <CardHeader className="pb-2">
+        <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2 mb-1">
+          <MapPinIcon className="h-5 w-5 text-blue-500" />
+          Datos de Contacto
         </h2>
         <p className="text-sm text-gray-500">
-          Ingresa tus datos de contacto para poder comunicarnos contigo
+          Proporciona tu información de contacto y dirección
         </p>
       </CardHeader>
       
-      <CardContent className="pt-6">
+      <CardContent className="pt-2">
         {saveSuccess && (
-          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-md flex items-center gap-2">
+          <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md flex items-center gap-2">
             <CheckCircle className="text-green-500 h-5 w-5" />
             <p className="text-green-800 text-sm font-medium">
               ¡Datos guardados correctamente! Redirigiendo al siguiente paso...
@@ -128,7 +129,7 @@ export function ContactForm({ initialData, onSubmit, applicationId }: ContactFor
         )}
         
         {saveError && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md">
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
             <p className="text-red-800 text-sm font-medium">
               {saveError}
             </p>
@@ -136,10 +137,9 @@ export function ContactForm({ initialData, onSubmit, applicationId }: ContactFor
         )}
         
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
-            {/* Dirección */}
-            <div className="bg-gray-50 p-4 rounded-lg border border-gray-100 mb-4">
-              <h3 className="font-medium text-gray-700 mb-4">Dirección</h3>
+          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-3">
+            <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+              <h3 className="font-medium text-gray-700 mb-2">Dirección</h3>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
@@ -272,8 +272,8 @@ export function ContactForm({ initialData, onSubmit, applicationId }: ContactFor
             </div>
             
             {/* Información de Contacto */}
-            <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
-              <h3 className="font-medium text-gray-700 mb-4">Información de Contacto</h3>
+            <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+              <h3 className="font-medium text-gray-700 mb-2">Información de Contacto</h3>
               
               <FormField
                 control={form.control}

@@ -26,6 +26,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, Calculator, Laptop } from 'lucide-react';
+import { StethoscopeIcon } from 'lucide-react';
 
 interface EquipmentFormProps {
   initialData?: Partial<EquipmentFormData>;
@@ -185,19 +186,19 @@ export function EquipmentForm({
 
   return (
     <Card className="w-full shadow-md border-gray-200">
-      <CardHeader className="pb-4">
-        <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
-          <Laptop className="h-5 w-5 text-blue-500" />
-          Equipo de Interés
+      <CardHeader className="pb-2">
+        <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2 mb-1">
+          <StethoscopeIcon className="h-5 w-5 text-purple-500" />
+          Equipo Médico
         </h2>
         <p className="text-sm text-gray-500">
-          Configura los detalles de tu financiamiento médico
+          Cuéntanos sobre el equipo médico que deseas financiar
         </p>
       </CardHeader>
       
-      <CardContent className="pt-6">
+      <CardContent className="pt-2">
         {saveSuccess && (
-          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-md flex items-center gap-2">
+          <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md flex items-center gap-2">
             <CheckCircle className="text-green-500 h-5 w-5" />
             <p className="text-green-800 text-sm font-medium">
               ¡Datos guardados correctamente! Redirigiendo al siguiente paso...
@@ -206,7 +207,7 @@ export function EquipmentForm({
         )}
         
         {saveError && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md">
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
             <p className="text-red-800 text-sm font-medium">
               {saveError}
             </p>
@@ -214,10 +215,10 @@ export function EquipmentForm({
         )}
         
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
+          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-3">
             {/* Información del financiamiento */}
-            <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
-              <div className="flex items-center gap-2 mb-4">
+            <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+              <div className="flex items-center gap-2 mb-2">
                 <Calculator className="h-5 w-5 text-gray-600" />
                 <h3 className="font-medium text-gray-700">
                   Información del financiamiento
