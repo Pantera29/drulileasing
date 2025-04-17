@@ -3,6 +3,7 @@ import { EquipmentForm } from '@/components/application/forms/equipment-form';
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { type EquipmentFormData } from '@/lib/schemas/equipment-schema';
+import type { Equipment } from '@/lib/types/equipment';
 
 // Forzar que esta ruta sea dinámica
 export const dynamic = 'force-dynamic';
@@ -34,6 +35,13 @@ export default async function EquipmentInfoPage() {
     // Si no hay aplicación, redirigir a la página principal para crear una
     redirect('/');
   }
+
+  // Obtener el catálogo de equipos activos
+  const { data: equipmentCatalog } = await supabase
+    .from('equipment_catalog')
+    .select('*')
+    .eq('is_active', true)
+    .order('brand', { ascending: true });
   
   // Obtener los datos del equipo si existen
   let equipmentData = null;
@@ -83,6 +91,11 @@ export default async function EquipmentInfoPage() {
       // Preparar datos exactamente como están en la tabla
       const equipmentData = {
         user_id: session.user.id,
+        equipment_catalog_id: data.equipment_catalog_id,
+        equipment_type: data.equipment_type,
+        equipment_brand: data.equipment_brand,
+        equipment_model: data.equipment_model,
+        equipment_full_name: data.equipment_full_name,
         approximate_amount: data.approximate_amount || 10000,
         desired_term: data.desired_term || 24,
         additional_comments: data.additional_comments || null,
@@ -97,6 +110,11 @@ export default async function EquipmentInfoPage() {
         const { error: updateError } = await supabase
           .from('equipment_requests')
           .update({
+            equipment_catalog_id: equipmentData.equipment_catalog_id,
+            equipment_type: equipmentData.equipment_type,
+            equipment_brand: equipmentData.equipment_brand,
+            equipment_model: equipmentData.equipment_model,
+            equipment_full_name: equipmentData.equipment_full_name,
             approximate_amount: equipmentData.approximate_amount,
             desired_term: equipmentData.desired_term,
             additional_comments: equipmentData.additional_comments,
@@ -152,6 +170,7 @@ export default async function EquipmentInfoPage() {
     <div>
       <EquipmentForm 
         initialData={equipmentData} 
+        equipmentCatalog={equipmentCatalog || []}
         onSubmit={saveEquipmentData}
         applicationId={application.id}
       />

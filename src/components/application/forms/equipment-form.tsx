@@ -1,17 +1,11 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { equipmentSchema, type EquipmentFormData } from '@/lib/schemas/equipment-schema';
 import { StepNavigation } from '@/components/application/layout/step-navigation';
 import { useRouter } from 'next/navigation';
-import { 
-  Card, 
-  CardHeader, 
-  CardContent, 
-  CardFooter 
-} from '@/components/ui/card';
 import {
   Form,
   FormControl,
@@ -19,82 +13,118 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-  FormDescription
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, Calculator, Laptop } from 'lucide-react';
-import { StethoscopeIcon } from 'lucide-react';
+import { CheckCircle, Search, StethoscopeIcon } from 'lucide-react';
+import type { Equipment } from '@/lib/types/equipment';
+import { LoanSimulator } from '@/components/application/ui/loan-simulator';
 
 interface EquipmentFormProps {
   initialData?: Partial<EquipmentFormData>;
+  equipmentCatalog?: Equipment[];
   onSubmit: (data: EquipmentFormData) => Promise<boolean>;
   applicationId: string;
 }
 
 export function EquipmentForm({ 
   initialData, 
+  equipmentCatalog = [], 
   onSubmit, 
   applicationId 
 }: EquipmentFormProps) {
   const router = useRouter();
+  const simulatorRef = useRef<HTMLDivElement>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
-  
+  const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedTerm, setSelectedTerm] = useState(24);
+
   const defaultValues = {
-    equipment_type: 'Genérico',
-    equipment_model: 'Estándar',
-    approximate_amount: 100000, // Mínimo requerido por el esquema
-    desired_term: 24, // Default 24 meses
-    additional_comments: '',
+    equipment_catalog_id: initialData?.equipment_catalog_id || '',
+    equipment_type: initialData?.equipment_type || '',
+    equipment_brand: initialData?.equipment_brand || '',
+    equipment_model: initialData?.equipment_model || '',
+    equipment_full_name: initialData?.equipment_full_name || '',
+    approximate_amount: initialData?.approximate_amount || 100000,
+    desired_term: initialData?.desired_term || 24,
+    additional_comments: initialData?.additional_comments || '',
   };
   
   const form = useForm<EquipmentFormData>({
     resolver: zodResolver(equipmentSchema),
     defaultValues,
   });
-  
-  // Monitorear el valor actual del monto
-  const currentAmount = form.watch('approximate_amount');
-  const currentTerm = form.watch('desired_term');
-  
-  // Configurar valores por defecto al cargar
-  useEffect(() => {
-    // Ya no necesitamos establecer estos valores porque los campos ya no existen
-    // Solo aseguramos que el monto sea válido
-    if (!currentAmount || currentAmount < 10000) {
-      form.setValue('approximate_amount', 10000, { shouldValidate: true });
+
+  // Filtrar equipos según término de búsqueda
+  const filteredEquipment = equipmentCatalog
+    .sort((a, b) => a.price - b.price) // Ordenar por precio de menor a mayor
+    .filter(equipment => {
+      const searchLower = searchTerm.toLowerCase();
+      return (
+        equipment.full_name.toLowerCase().includes(searchLower) ||
+        equipment.brand.toLowerCase().includes(searchLower) ||
+        equipment.model.toLowerCase().includes(searchLower) ||
+        equipment.family.toLowerCase().includes(searchLower) ||
+        (equipment.features && Array.isArray(equipment.features) && 
+          equipment.features.some(feature => 
+            typeof feature === 'string' && feature.toLowerCase().includes(searchLower)
+          ))
+      );
+    });
+
+  // Agrupar equipos por marca
+  const groupedEquipment = filteredEquipment.reduce<Record<string, Equipment[]>>((acc, equipment) => {
+    if (!acc[equipment.brand]) {
+      acc[equipment.brand] = [];
     }
-  }, [form.setValue, currentAmount]);
-  
+    acc[equipment.brand].push(equipment);
+    return acc;
+  }, {});
+
+  const handleEquipmentSelect = (equipment: Equipment) => {
+    setSelectedEquipment(equipment);
+    setSelectedTerm(24); // Reset term to default
+    
+    // Actualizar el formulario con los datos del equipo
+    form.setValue('equipment_catalog_id', equipment.id);
+    form.setValue('equipment_type', equipment.family);
+    form.setValue('equipment_brand', equipment.brand);
+    form.setValue('equipment_model', equipment.model);
+    form.setValue('equipment_full_name', equipment.full_name);
+    form.setValue('approximate_amount', equipment.price);
+    form.setValue('desired_term', selectedTerm);
+
+    // Scroll suave al simulador después de un pequeño delay
+    setTimeout(() => {
+      simulatorRef.current?.scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'center'
+      });
+    }, 100);
+  };
+
+  const handleTermChange = (term: number) => {
+    setSelectedTerm(term);
+    form.setValue('desired_term', term);
+  };
+
   const handleFormSubmit = async (data: EquipmentFormData) => {
     setIsSubmitting(true);
     setSaveSuccess(false);
     setSaveError(null);
     
     try {
-      // Asegurar valores mínimos y enviar solo los campos que existen en la tabla
-      const formData = {
-        approximate_amount: Math.max(10000, data.approximate_amount || 10000),
-        desired_term: data.desired_term || 24,
-        additional_comments: data.additional_comments || null
-      };
-      
-      console.log('Enviando datos simplificados:', formData);
-      
-      // Llamada simplificada al servidor
-      const success = await onSubmit(formData as EquipmentFormData);
+      console.log('Enviando datos del equipo:', data);
+      const success = await onSubmit(data);
       
       if (success) {
         console.log('¡Datos guardados correctamente!');
         setSaveSuccess(true);
         
-        // Navegar después de un breve retraso
         setTimeout(() => {
-          console.log('Navegando al siguiente paso...');
           router.push('/application/step/5');
         }, 1500);
         
@@ -113,13 +143,10 @@ export function EquipmentForm({
     }
   };
 
-  // Wrapper para StepNavigation que se asegura de devolver un boolean
   const handleStepSave = async () => {
     console.log('Guardando datos del formulario de equipo...');
     try {
-      // Utilizar handleSubmit para validar y procesar el formulario
       const success = await form.handleSubmit(async (data) => {
-        // Procesar directamente aquí para evitar problemas con retorno de valores
         return await handleFormSubmit(data);
       })();
       
@@ -130,73 +157,19 @@ export function EquipmentForm({
     }
   };
 
-  // Calcular la tasa de interés según monto y plazo
-  // (copiada del simulador de la landing)
-  const calculateInterestRate = (amount: number, term: number): number => {
-    // Tasa base
-    let rate = 0.15;
-
-    // Ajustes según el monto (montos más altos, tasas menores)
-    if (amount > 1000000) rate -= 0.01;
-    if (amount > 1500000) rate -= 0.005;
-
-    // Ajustes según el plazo (plazos más largos, tasas mayores)
-    if (term > 24) rate += 0.005;
-    if (term > 36) rate += 0.005;
-
-    return rate;
-  };
-  
-  // Calcular pago mensual estimado con la misma lógica del simulador de la landing
-  const calculateMonthlyPayment = () => {
-    if (!currentAmount || currentAmount < 10000 || !currentTerm) return 0;
-    
-    // Calcular la tasa según los parámetros
-    const annualRate = calculateInterestRate(currentAmount, currentTerm);
-    const monthlyRate = annualRate / 12;
-    
-    try {
-      // Fórmula: P = A * r * (1 + r)^n / ((1 + r)^n - 1)
-      // Donde P = pago mensual, A = monto, r = tasa mensual, n = número de pagos
-      const numerator = currentAmount * monthlyRate * Math.pow(1 + monthlyRate, currentTerm);
-      const denominator = Math.pow(1 + monthlyRate, currentTerm) - 1;
-      
-      if (isNaN(numerator) || isNaN(denominator) || denominator === 0) {
-        console.error('Error en cálculo de pago mensual:', { currentAmount, currentTerm, numerator, denominator });
-        return 0;
-      }
-      
-      return numerator / denominator;
-    } catch (calcError) {
-      console.error('Error al calcular pago mensual:', calcError);
-      return 0;
-    }
-  };
-  
-  // Formato para valores monetarios
-  const formatCurrency = (value: number) => {
-    return value.toLocaleString('es-MX', {
-      style: 'currency',
-      currency: 'MXN',
-      minimumFractionDigits: 2,
-    });
-  };
-  
-  const monthlyPayment = calculateMonthlyPayment();
-
   return (
-    <Card className="w-full shadow-md border-gray-200">
-      <CardHeader className="pb-2">
+    <div className="w-full">
+      <div className="pb-2">
         <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2 mb-1">
           <StethoscopeIcon className="h-5 w-5 text-purple-500" />
-          Equipo Médico
+          Selección de Equipo
         </h2>
         <p className="text-sm text-gray-500">
-          Cuéntanos sobre el equipo médico que deseas financiar
+          Explora nuestro catálogo y selecciona el equipo que mejor se adapte a tus necesidades
         </p>
-      </CardHeader>
+      </div>
       
-      <CardContent className="pt-2">
+      <div className="pt-2">
         {saveSuccess && (
           <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md flex items-center gap-2">
             <CheckCircle className="text-green-500 h-5 w-5" />
@@ -215,97 +188,96 @@ export function EquipmentForm({
         )}
         
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-3">
-            {/* Información del financiamiento */}
-            <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
-              <div className="flex items-center gap-2 mb-2">
-                <Calculator className="h-5 w-5 text-gray-600" />
-                <h3 className="font-medium text-gray-700">
-                  Información del financiamiento
-                </h3>
-              </div>
-              
-              {/* Monto y plazo */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <FormField
-                  control={form.control}
-                  name="approximate_amount"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Monto aproximado (MXN)</FormLabel>
-                      <FormControl>
-                        <div className="relative flex items-center">
-                          <span className="absolute left-3 text-gray-500">$</span>
-                          <Input
-                            type="number"
-                            min="10000"
-                            step="1000"
-                            className="pl-7 w-full"
-                            {...field}
-                            onChange={(e) => field.onChange(parseFloat(e.target.value))}
-                            value={field.value || 10000}
-                          />
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="desired_term"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Plazo deseado (meses)</FormLabel>
-                      <Select
-                        onValueChange={(value) => field.onChange(parseInt(value))}
-                        defaultValue={field.value?.toString()}
+          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
+            {/* Buscador */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+              <Input
+                type="text"
+                placeholder="Buscar por nombre, marca o características..."
+                className="pl-10 w-full"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+
+            {/* Catálogo de equipos */}
+            <div className="space-y-6">
+              {Object.entries(groupedEquipment).map(([brand, equipments]) => (
+                <div key={brand} className="w-full">
+                  <h3 className="text-lg font-medium text-gray-700 mb-3">{brand}</h3>
+                  <div className="space-y-4 w-full">
+                    {equipments.map((equipment) => (
+                      <div
+                        key={equipment.id}
+                        className={`w-full p-4 border rounded-lg transition-all duration-200 hover:shadow-lg cursor-pointer ${
+                          selectedEquipment?.id === equipment.id 
+                            ? 'border-purple-500 bg-purple-50' 
+                            : 'border-gray-200 hover:border-purple-200'
+                        }`}
+                        onClick={() => handleEquipmentSelect(equipment)}
                       >
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Selecciona un plazo" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-white">
-                          <SelectItem value="12">12 meses</SelectItem>
-                          <SelectItem value="24">24 meses</SelectItem>
-                          <SelectItem value="36">36 meses</SelectItem>
-                          <SelectItem value="48">48 meses</SelectItem>
-                          <SelectItem value="60">60 meses</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              
-              {/* Cálculo de pagos */}
-              <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-100">
-                <h4 className="font-medium text-blue-800 mb-2">
-                  Cálculo aproximado
-                </h4>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <p className="text-sm text-blue-600">Monto a financiar</p>
-                    <p className="text-lg font-semibold">{formatCurrency(currentAmount || 0)}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-blue-600">Pago mensual</p>
-                    <p className="text-lg font-semibold">{formatCurrency(monthlyPayment)}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-blue-600">Tasa anual</p>
-                    <p className="text-lg font-semibold">
-                      {(calculateInterestRate(currentAmount || 0, currentTerm || 24) * 100).toFixed(1)}%
-                    </p>
+                        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                          <div className="flex-grow space-y-1">
+                            <h4 className="text-lg font-semibold text-gray-900">
+                              {equipment.full_name}
+                            </h4>
+                            <div className="flex flex-wrap gap-x-6 text-sm text-gray-600">
+                              <p><span className="font-medium">Marca:</span> {equipment.brand}</p>
+                              <p><span className="font-medium">Modelo:</span> {equipment.model}</p>
+                              <p><span className="font-medium">Familia:</span> {equipment.family}</p>
+                            </div>
+                            {equipment.description && (
+                              <p className="text-sm text-gray-500 mt-2 line-clamp-2">
+                                {equipment.description}
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
+                            <p className="text-lg font-bold text-purple-600 whitespace-nowrap">
+                              ${equipment.price.toLocaleString('es-MX')}
+                            </p>
+                            <Button
+                              type="button"
+                              variant={selectedEquipment?.id === equipment.id ? "secondary" : "outline"}
+                              className="w-full md:w-auto whitespace-nowrap"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEquipmentSelect(equipment);
+                              }}
+                            >
+                              {selectedEquipment?.id === equipment.id ? 'Seleccionado' : 'Seleccionar'}
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
-                <p className="mt-4 text-xs text-blue-600">
-                  *Este es un cálculo aproximado. La tasa final y condiciones serán confirmadas después de la aprobación.
-                </p>
-              </div>
+              ))}
+
+              {filteredEquipment.length === 0 && (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">
+                    {equipmentCatalog.length === 0 
+                      ? "No hay equipos disponibles en el catálogo."
+                      : "No se encontraron equipos que coincidan con tu búsqueda."}
+                  </p>
+                </div>
+              )}
             </div>
-            
+
+            {/* Simulador de préstamo */}
+            {selectedEquipment && (
+              <div ref={simulatorRef} className="mt-8">
+                <LoanSimulator
+                  amount={selectedEquipment.price}
+                  selectedTerm={selectedTerm}
+                  onTermChange={handleTermChange}
+                />
+              </div>
+            )}
+
             {/* Comentarios adicionales */}
             <FormField
               control={form.control}
@@ -317,8 +289,10 @@ export function EquipmentForm({
                     <textarea 
                       className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 min-h-[100px]"
                       placeholder="¿Hay algo más que quieras comentarnos sobre el equipo o financiamiento?"
-                      {...field}
                       value={field.value || ''}
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
+                      name={field.name}
                     />
                   </FormControl>
                   <FormMessage />
@@ -327,16 +301,16 @@ export function EquipmentForm({
             />
           </form>
         </Form>
-      </CardContent>
+      </div>
       
-      <CardFooter className="flex justify-between pt-4 border-t border-gray-100">
+      <div className="flex justify-between pt-6 mt-6 border-t border-gray-100">
         <StepNavigation
           currentStep={4}
           totalSteps={5}
           onSave={handleStepSave}
           isSubmitting={isSubmitting}
         />
-      </CardFooter>
-    </Card>
+      </div>
+    </div>
   );
 } 

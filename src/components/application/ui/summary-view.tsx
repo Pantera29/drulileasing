@@ -31,8 +31,11 @@ interface SummaryDataType {
     income_proof_url?: string | null;
   };
   equipment?: {
+    equipment_catalog_id?: string | null;
     equipment_type: string;
+    equipment_brand: string;
     equipment_model: string;
+    equipment_full_name?: string | null;
     approximate_amount: number;
     desired_term: number;
     additional_comments?: string | null;
@@ -236,8 +239,20 @@ export function SummaryView({ data }: SummaryViewProps) {
             <div className="md:col-span-2">
               <p className="text-xs font-medium text-gray-500">Equipo seleccionado</p>
               <p className="mt-1 text-sm text-gray-900">
-                {data.equipment.equipment_type} - {data.equipment.equipment_model}
+                {data.equipment.equipment_full_name || `${data.equipment.equipment_brand} - ${data.equipment.equipment_model}`}
               </p>
+            </div>
+            <div>
+              <p className="text-xs font-medium text-gray-500">Tipo de equipo</p>
+              <p className="mt-1 text-sm text-gray-900">{data.equipment.equipment_type}</p>
+            </div>
+            <div>
+              <p className="text-xs font-medium text-gray-500">Marca</p>
+              <p className="mt-1 text-sm text-gray-900">{data.equipment.equipment_brand}</p>
+            </div>
+            <div>
+              <p className="text-xs font-medium text-gray-500">Modelo</p>
+              <p className="mt-1 text-sm text-gray-900">{data.equipment.equipment_model}</p>
             </div>
             <div>
               <p className="text-xs font-medium text-gray-500">Monto aproximado</p>

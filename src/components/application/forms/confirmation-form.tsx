@@ -6,6 +6,10 @@ import { StepNavigation } from '@/components/application/layout/step-navigation'
 import { useRouter } from 'next/navigation';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { CheckCircle, Info } from 'lucide-react';
+import Link from 'next/link';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Button } from '@/components/ui/button';
+import { Loader2 } from 'lucide-react';
 
 // Tipo para la respuesta del servidor
 interface SubmitResponse {
@@ -22,6 +26,53 @@ interface ConfirmationFormProps {
   }) => Promise<SubmitResponse>;
   applicationId: string;
 }
+
+const EquipmentSection = ({ data }: { data: any }) => (
+  <div className="space-y-4">
+    <div className="flex items-center justify-between">
+      <h3 className="text-lg font-semibold">Equipo de Interés</h3>
+      <Link 
+        href="/application/step/4" 
+        className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+      >
+        Editar
+      </Link>
+    </div>
+    
+    <div className="bg-white rounded-lg border border-gray-200 p-4 space-y-4">
+      <div>
+        <p className="text-sm text-gray-500">Equipo seleccionado</p>
+        <p className="text-base font-medium text-gray-900">
+          {data.equipment_brand} - {data.equipment_model}
+        </p>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <p className="text-sm text-gray-500">Monto aproximado</p>
+          <p className="text-base font-medium text-gray-900">
+            ${data.approximate_amount?.toLocaleString('es-MX')}
+          </p>
+        </div>
+        <div>
+          <p className="text-sm text-gray-500">Plazo deseado</p>
+          <p className="text-base font-medium text-gray-900">
+            {data.desired_term} meses
+          </p>
+        </div>
+      </div>
+
+      {data.additional_comments && (
+        <div>
+          <p className="text-sm text-gray-500">Comentarios adicionales</p>
+          <p className="text-sm text-gray-600 mt-1">
+            {data.additional_comments}
+          </p>
+        </div>
+      )}
+    </div>
+  </div>
+);
 
 export function ConfirmationForm({ 
   summaryData, 
@@ -184,9 +235,7 @@ export function ConfirmationForm({
                 <div className="mt-4 rounded-md bg-blue-50 border border-blue-100 p-3">
                   <div className="flex items-start">
                     <div className="flex-shrink-0">
-                      <svg className="h-5 w-5 text-blue-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1V9z" clipRule="evenodd" />
-                      </svg>
+                      <Info className="h-5 w-5 text-blue-500" />
                     </div>
                     <div className="ml-3">
                       <p className="text-sm text-blue-700">
@@ -196,15 +245,15 @@ export function ConfirmationForm({
                   </div>
                 </div>
               </div>
+              
+              <StepNavigation 
+                currentStep={5} 
+                totalSteps={5}
+                onSave={handleStepSave}
+                isSubmitting={isSubmitting}
+                nextButtonText={isSubmitting ? "Enviando..." : "Finalizar solicitud"}
+              />
             </div>
-            
-            <StepNavigation 
-              currentStep={5} 
-              totalSteps={5}
-              onSave={handleStepSave}
-              isSubmitting={isSubmitting}
-              nextButtonText={isSubmitting ? "Enviando..." : "Finalizar solicitud"}
-            />
           </CardContent>
         </Card>
       </div>

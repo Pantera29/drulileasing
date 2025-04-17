@@ -2,6 +2,31 @@ import { z } from 'zod';
 
 // Esquema para validación de la solicitud de equipo
 export const equipmentSchema = z.object({
+  equipment_catalog_id: z
+    .string()
+    .uuid({ message: 'ID de catálogo inválido' })
+    .optional(),
+  
+  equipment_type: z
+    .string()
+    .min(1, { message: 'El tipo de equipo es requerido' })
+    .optional(),
+  
+  equipment_brand: z
+    .string()
+    .min(1, { message: 'La marca del equipo es requerida' })
+    .optional(),
+  
+  equipment_model: z
+    .string()
+    .min(1, { message: 'El modelo del equipo es requerido' })
+    .optional(),
+  
+  equipment_full_name: z
+    .string()
+    .min(1, { message: 'El nombre completo del equipo es requerido' })
+    .optional(),
+  
   approximate_amount: z
     .number()
     .min(10000, { message: 'El monto debe ser al menos $10,000 MXN' })
