@@ -61,19 +61,19 @@ export function Footer() {
         <div>
           <h3 className="font-medium text-base mb-4">Contacto</h3>
           <address className="not-italic space-y-2 text-sm text-gray-600">
-            <p>Av. Paseo de la Reforma 222</p>
-            <p>Col. Juárez, Cuauhtémoc</p>
-            <p>Ciudad de México, 06600</p>
-            <p className="pt-2">
+            <div>Av. Paseo de la Reforma 222</div>
+            <div>Col. Juárez, Cuauhtémoc</div>
+            <div>Ciudad de México, 06600</div>
+            <div className="pt-2">
               <a href="tel:+525555555555" className="hover:text-primary transition-colors">
                 +52 (55) 5555-5555
               </a>
-            </p>
-            <p>
+            </div>
+            <div>
               <a href="mailto:info@drulileasing.mx" className="hover:text-primary transition-colors">
                 info@drulileasing.mx
               </a>
-            </p>
+            </div>
           </address>
         </div>
         
