@@ -70,8 +70,8 @@ export function Footer() {
               </a>
             </p>
             <p>
-              <a href="mailto:info@druli.mx" className="hover:text-primary transition-colors">
-                info@druli.mx
+              <a href="mailto:info@drulileasing.mx" className="hover:text-primary transition-colors">
+                info@drulileasing.mx
               </a>
             </p>
           </address>
