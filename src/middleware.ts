@@ -89,6 +89,7 @@ export const config = {
     '/login',
     '/register',
     '/reset-password',
+    '/reset-password/update',
     '/application',
     '/app-routes',
   ],

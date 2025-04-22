@@ -6,10 +6,15 @@ import { cookies } from 'next/headers';
 // o estar en un layout con esa configuración
 export async function createClient() {
   const cookieStore = await cookies();
+  
+  // Usar la clave de servicio si está disponible, de lo contrario usar la clave anónima
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+  
+  console.log(`Usando ${process.env.SUPABASE_SERVICE_ROLE_KEY ? 'clave de servicio' : 'clave anónima'} para Supabase`);
 
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    supabaseKey,
     {
       cookies: {
         get(name: string) {

@@ -9,6 +9,48 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { formatCurrency } from '@/lib/utils';
 
+// Interfaces basadas en la estructura de la base de datos
+interface Profile {
+  id: string;
+  full_name: string;
+  birth_date: string;
+  curp_rfc: string;
+  marital_status: string;
+  dependents: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+interface EquipmentRequest {
+  id: string;
+  user_id: string;
+  approximate_amount: number;
+  desired_term: number;
+  additional_comments?: string;
+  created_at?: string;
+  updated_at?: string;
+  equipment_catalog_id?: string;
+  equipment_type?: string;
+  equipment_brand?: string;
+  equipment_model?: string;
+  equipment_full_name?: string;
+}
+
+interface CreditApplication {
+  id: string;
+  application_status: string;
+  analyst_id?: string;
+  analysis_started_at?: string;
+  equipment_id: string;
+  profiles: {
+    full_name: string;
+  };
+  equipment_requests: {
+    approximate_amount: number;
+    desired_term: number;
+  };
+}
+
 // Forzar que la ruta sea dinámica
 export const dynamic = 'force-dynamic';
 
@@ -50,11 +92,11 @@ export default async function ApproveApplicationPage({
       analyst_id,
       analysis_started_at,
       equipment_id,
-      profiles!credit_applications_profile_id_fkey(full_name),
-      equipment_requests!credit_applications_equipment_id_fkey(approximate_amount, desired_term)
+      profiles!inner(full_name),
+      equipment_requests!inner(approximate_amount, desired_term)
     `)
     .eq('id', id)
-    .single();
+    .single() as { data: CreditApplication | null, error: any };
     
   if (error || !application) {
     console.error('Error al obtener la solicitud:', error);
@@ -72,18 +114,18 @@ export default async function ApproveApplicationPage({
   }
   
   // Información del equipo solicitado para mostrar y sugerir montos
-  const requestedAmount = application.equipment_requests?.approximate_amount || 0;
-  const requestedTerm = application.equipment_requests?.desired_term || 12;
+  const requestedAmount = application.equipment_requests.approximate_amount || 0;
+  const requestedTerm = application.equipment_requests.desired_term || 12;
   
   // Función para aprobar la solicitud
-  async function approveApplication(formData: FormData) {
+  async function approveApplication(formData: FormData): Promise<void> {
     'use server';
     
     const supabase = await createClient();
     const { data: { session } } = await supabase.auth.getSession();
     
     if (!session) {
-      return { success: false, message: 'Sesión expirada' };
+      redirect('/login?error=session_expired');
     }
     
     // Obtener datos del formulario
@@ -93,11 +135,11 @@ export default async function ApproveApplicationPage({
     
     // Validar datos
     if (isNaN(adjustedAmount) || adjustedAmount <= 0) {
-      return { success: false, message: 'El monto ajustado no es válido' };
+      redirect(`/admin/applications/${id}?error=invalid_amount`);
     }
     
     if (isNaN(adjustedTerm) || adjustedTerm <= 0) {
-      return { success: false, message: 'El plazo ajustado no es válido' };
+      redirect(`/admin/applications/${id}?error=invalid_term`);
     }
     
     // Calcular pago mensual (tasa anual del 15%)
@@ -124,7 +166,7 @@ export default async function ApproveApplicationPage({
         
       if (decisionError) {
         console.error('Error al guardar decisión:', decisionError);
-        throw new Error('No se pudo guardar la decisión');
+        redirect(`/admin/applications/${id}?error=save_decision_failed`);
       }
       
       // 2. Actualizar solicitud
@@ -142,7 +184,7 @@ export default async function ApproveApplicationPage({
         
       if (updateError) {
         console.error('Error al actualizar solicitud:', updateError);
-        throw new Error('No se pudo actualizar la solicitud');
+        redirect(`/admin/applications/${id}?error=update_application_failed`);
       }
       
       // 3. Registrar actividad
@@ -156,13 +198,11 @@ export default async function ApproveApplicationPage({
         }
       });
       
-      // 4. Enviar notificación al usuario (opcional)
-      // Aquí se implementaría el código para enviar una notificación por email
-      
-      return { success: true };
+      // Redireccionar en caso de éxito
+      redirect(`/admin/applications/${id}?success=approved`);
     } catch (error) {
       console.error('Error en el proceso de aprobación:', error);
-      return { success: false, message: 'Error en el proceso de aprobación' };
+      redirect(`/admin/applications/${id}?error=approval_failed`);
     }
   }
   
@@ -188,7 +228,7 @@ export default async function ApproveApplicationPage({
         </Link>
         <h1 className="text-2xl font-bold">Aprobar solicitud</h1>
         <p className="text-gray-500">
-          Solicitud de {application.profiles?.full_name || 'Cliente'}
+          Solicitud de {application.profiles.full_name || 'Cliente'}
         </p>
       </div>
       

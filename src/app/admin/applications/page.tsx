@@ -23,31 +23,25 @@ const defaultSearchParams = {
 
 // La función principal del componente debe ser async para manejar searchParams
 export default async function ApplicationsPage({
-  searchParams,
+  searchParams
 }: {
-  searchParams: {
-    status?: string;
-    search?: string;
-    scoreMin?: string;
-    scoreMax?: string;
-    amountMin?: string;
-    amountMax?: string;
-    page?: string;
-    error?: string;
-  };
+  searchParams: { [key: string]: string | string[] | undefined }
 }) {
   // Creamos el cliente de Supabase
   const supabase = await createClient();
   
+  // Resolvemos los parámetros de búsqueda de forma segura
+  const resolvedSearchParams = await Promise.resolve(searchParams);
+  
   // Extraemos los parámetros del objeto searchParams de forma segura (Next.js 14)
-  const status = searchParams?.status || defaultSearchParams.status;
-  const search = searchParams?.search || defaultSearchParams.search;
-  const scoreMin = parseInt(searchParams?.scoreMin || defaultSearchParams.scoreMin);
-  const scoreMax = parseInt(searchParams?.scoreMax || defaultSearchParams.scoreMax);
-  const amountMin = parseInt(searchParams?.amountMin || defaultSearchParams.amountMin);
-  const amountMax = parseInt(searchParams?.amountMax || defaultSearchParams.amountMax);
-  const page = parseInt(searchParams?.page || defaultSearchParams.page);
-  const errorMsg = searchParams?.error;
+  const status = Array.isArray(resolvedSearchParams?.status) ? resolvedSearchParams.status[0] : resolvedSearchParams?.status || defaultSearchParams.status;
+  const search = Array.isArray(resolvedSearchParams?.search) ? resolvedSearchParams.search[0] : resolvedSearchParams?.search || defaultSearchParams.search;
+  const scoreMin = parseInt(Array.isArray(resolvedSearchParams?.scoreMin) ? resolvedSearchParams.scoreMin[0] : resolvedSearchParams?.scoreMin || defaultSearchParams.scoreMin);
+  const scoreMax = parseInt(Array.isArray(resolvedSearchParams?.scoreMax) ? resolvedSearchParams.scoreMax[0] : resolvedSearchParams?.scoreMax || defaultSearchParams.scoreMax);
+  const amountMin = parseInt(Array.isArray(resolvedSearchParams?.amountMin) ? resolvedSearchParams.amountMin[0] : resolvedSearchParams?.amountMin || defaultSearchParams.amountMin);
+  const amountMax = parseInt(Array.isArray(resolvedSearchParams?.amountMax) ? resolvedSearchParams.amountMax[0] : resolvedSearchParams?.amountMax || defaultSearchParams.amountMax);
+  const page = parseInt(Array.isArray(resolvedSearchParams?.page) ? resolvedSearchParams.page[0] : resolvedSearchParams?.page || defaultSearchParams.page);
+  const errorMsg = Array.isArray(resolvedSearchParams?.error) ? resolvedSearchParams.error[0] : resolvedSearchParams?.error;
   
   const pageSize = 10;
   const offset = (page - 1) * pageSize;
