@@ -21,16 +21,10 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue 
-} from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, MapPin } from 'lucide-react';
+import { CheckCircle, MapPin, Loader2 } from 'lucide-react';
 import { MapPinIcon } from 'lucide-react';
+import { toast } from '@/components/ui/use-toast';
 
 interface ContactFormProps {
   initialData?: Partial<ContactFormData>;
@@ -42,6 +36,7 @@ export function ContactForm({ initialData, onSubmit, applicationId }: ContactFor
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [saveSuccess, setSaveSuccess] = React.useState(false);
   const [saveError, setSaveError] = React.useState<string | null>(null);
+  const [isLoadingPostalCode, setIsLoadingPostalCode] = React.useState(false);
   const router = useRouter();
   
   const defaultValues = initialData || {
@@ -59,6 +54,50 @@ export function ContactForm({ initialData, onSubmit, applicationId }: ContactFor
     defaultValues,
   });
   
+  const handlePostalCodeChange = async (postalCode: string) => {
+    if (postalCode.length !== 5) return;
+    
+    setIsLoadingPostalCode(true);
+    try {
+      const response = await fetch(`/api/postal-code?postalCode=${postalCode}`);
+      const data = await response.json();
+      
+      if (!response.ok) {
+        toast({
+          title: "Error",
+          description: data.error || "No se pudo obtener la información del código postal.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      const postalCodeInfo = Array.isArray(data) ? data[0] : data;
+      
+      if (!postalCodeInfo || !postalCodeInfo.municipality || !postalCodeInfo.state || !postalCodeInfo.city) {
+        toast({
+          title: "Error",
+          description: "La información del código postal está incompleta.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      form.setValue('neighborhood', postalCodeInfo.neighborhood);
+      form.setValue('city', postalCodeInfo.city);
+      form.setValue('state', postalCodeInfo.state);
+      
+    } catch (error) {
+      console.error('Error al consultar código postal:', error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "No se pudo obtener la información del código postal.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingPostalCode(false);
+    }
+  };
+
   const handleFormSubmit = async (data: ContactFormData) => {
     setIsSubmitting(true);
     setSaveSuccess(false);
@@ -141,7 +180,7 @@ export function ContactForm({ initialData, onSubmit, applicationId }: ContactFor
             <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
               <h3 className="font-medium text-gray-700 mb-2">Dirección</h3>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <FormField
                   control={form.control}
                   name="street"
@@ -170,6 +209,41 @@ export function ContactForm({ initialData, onSubmit, applicationId }: ContactFor
                   )}
                 />
               </div>
+
+              <div className="mb-4">
+                <FormField
+                  control={form.control}
+                  name="zip_code"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Código Postal</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Input 
+                            placeholder="Ingresa el código postal para autocompletar la dirección" 
+                            {...field} 
+                            onChange={(e) => {
+                              field.onChange(e);
+                              if (e.target.value.length === 5) {
+                                handlePostalCodeChange(e.target.value);
+                              }
+                            }}
+                          />
+                          {isLoadingPostalCode && (
+                            <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                            </div>
+                          )}
+                        </div>
+                      </FormControl>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Al ingresar el código postal se autocompletarán la colonia, ciudad y estado
+                      </p>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
               
               <div className="mt-4">
                 <FormField
@@ -179,7 +253,7 @@ export function ContactForm({ initialData, onSubmit, applicationId }: ContactFor
                     <FormItem>
                       <FormLabel>Colonia</FormLabel>
                       <FormControl>
-                        <Input placeholder="Nombre de la colonia" {...field} />
+                        <Input placeholder="Se autocompletará al ingresar el código postal" {...field} readOnly />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -187,7 +261,7 @@ export function ContactForm({ initialData, onSubmit, applicationId }: ContactFor
                 />
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                 <FormField
                   control={form.control}
                   name="city"
@@ -195,7 +269,7 @@ export function ContactForm({ initialData, onSubmit, applicationId }: ContactFor
                     <FormItem>
                       <FormLabel>Ciudad</FormLabel>
                       <FormControl>
-                        <Input placeholder="Ciudad" {...field} />
+                        <Input placeholder="Se autocompletará al ingresar el código postal" {...field} readOnly />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -208,61 +282,8 @@ export function ContactForm({ initialData, onSubmit, applicationId }: ContactFor
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Estado</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Selecciona un estado" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-white">
-                          <SelectItem value="Aguascalientes">Aguascalientes</SelectItem>
-                          <SelectItem value="Baja California">Baja California</SelectItem>
-                          <SelectItem value="Baja California Sur">Baja California Sur</SelectItem>
-                          <SelectItem value="Campeche">Campeche</SelectItem>
-                          <SelectItem value="Chiapas">Chiapas</SelectItem>
-                          <SelectItem value="Chihuahua">Chihuahua</SelectItem>
-                          <SelectItem value="Ciudad de México">Ciudad de México</SelectItem>
-                          <SelectItem value="Coahuila">Coahuila</SelectItem>
-                          <SelectItem value="Colima">Colima</SelectItem>
-                          <SelectItem value="Durango">Durango</SelectItem>
-                          <SelectItem value="Estado de México">Estado de México</SelectItem>
-                          <SelectItem value="Guanajuato">Guanajuato</SelectItem>
-                          <SelectItem value="Guerrero">Guerrero</SelectItem>
-                          <SelectItem value="Hidalgo">Hidalgo</SelectItem>
-                          <SelectItem value="Jalisco">Jalisco</SelectItem>
-                          <SelectItem value="Michoacán">Michoacán</SelectItem>
-                          <SelectItem value="Morelos">Morelos</SelectItem>
-                          <SelectItem value="Nayarit">Nayarit</SelectItem>
-                          <SelectItem value="Nuevo León">Nuevo León</SelectItem>
-                          <SelectItem value="Oaxaca">Oaxaca</SelectItem>
-                          <SelectItem value="Puebla">Puebla</SelectItem>
-                          <SelectItem value="Querétaro">Querétaro</SelectItem>
-                          <SelectItem value="Quintana Roo">Quintana Roo</SelectItem>
-                          <SelectItem value="San Luis Potosí">San Luis Potosí</SelectItem>
-                          <SelectItem value="Sinaloa">Sinaloa</SelectItem>
-                          <SelectItem value="Sonora">Sonora</SelectItem>
-                          <SelectItem value="Tabasco">Tabasco</SelectItem>
-                          <SelectItem value="Tamaulipas">Tamaulipas</SelectItem>
-                          <SelectItem value="Tlaxcala">Tlaxcala</SelectItem>
-                          <SelectItem value="Veracruz">Veracruz</SelectItem>
-                          <SelectItem value="Yucatán">Yucatán</SelectItem>
-                          <SelectItem value="Zacatecas">Zacatecas</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="zip_code"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Código Postal</FormLabel>
                       <FormControl>
-                        <Input placeholder="Código Postal" {...field} />
+                        <Input placeholder="Se autocompletará al ingresar el código postal" {...field} readOnly />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

@@ -42,9 +42,14 @@ export default function DashboardPage() {
         const { data: { session } } = await supabase.auth.getSession();
         
         if (session?.user) {
-          console.log('Usuario en dashboard page:', session.user.id);
+          console.log('Usuario en dashboard page:', session.user);
           
-          // Intentar obtener el nombre del perfil usando maybeSingle en lugar de single
+          // Obtener el nombre directamente de user_metadata
+          const displayName = session.user.user_metadata?.full_name;
+          
+          console.log('Display name encontrado:', displayName);
+          
+          // Intentar obtener el nombre del perfil
           const { data: profile, error: profileError } = await supabase
             .from('profiles')
             .select('full_name')
@@ -54,39 +59,38 @@ export default function DashboardPage() {
           if (profileError) {
             console.error('Error al obtener perfil:', profileError);
             setError('No se pudo cargar la información del perfil');
-            setUserName(session.user.email || 'Usuario');
-          } else if (profile?.full_name) {
+            setUserName(displayName || 'Usuario');
+          } else if (profile?.full_name && profile.full_name !== 'Usuario') {
             setUserName(profile.full_name);
           } else {
-            console.log('No se encontró un perfil para este usuario, creando uno básico...');
+            console.log('No se encontró un perfil para este usuario o necesita actualización, actualizando...');
             
             // Fecha de nacimiento predeterminada (18 años atrás desde hoy)
             const defaultBirthDate = new Date();
             defaultBirthDate.setFullYear(defaultBirthDate.getFullYear() - 18);
             
-            // Usar upsert en lugar de insert para manejar la posibilidad de que el perfil exista
+            // Actualizar o crear el perfil con el nombre de auth
             const { error: upsertError } = await supabase
               .from('profiles')
               .upsert({
                 id: session.user.id,
-                full_name: session.user.email || 'Usuario',
-                birth_date: defaultBirthDate.toISOString().split('T')[0], // Formato YYYY-MM-DD
-                curp_rfc: 'XXXX000000XXXXXX00', // Valor temporal, deberá ser actualizado por el usuario
-                marital_status: 'soltero', // Valor predeterminado
-                dependents: 0, // Valor predeterminado
+                full_name: displayName || 'Usuario',
+                birth_date: defaultBirthDate.toISOString().split('T')[0],
+                curp_rfc: 'XXXX000000XXXXXX00',
+                marital_status: 'soltero',
+                dependents: 0,
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString()
               }, {
-                onConflict: 'id', // Especificar columna de conflicto
-                ignoreDuplicates: false // Actualizar en caso de conflicto
+                onConflict: 'id',
+                ignoreDuplicates: false
               });
               
             if (upsertError) {
               console.error('Error al crear o actualizar perfil básico:', upsertError);
               setError('No se pudo crear un perfil inicial. Por favor actualice sus datos personales.');
             } else {
-              // Refrescar el nombre de usuario después de la creación exitosa
-              setUserName(session.user.email || 'Usuario');
+              setUserName(displayName || 'Usuario');
               console.log('Perfil creado o actualizado exitosamente');
             }
           }
@@ -155,6 +159,7 @@ export default function DashboardPage() {
       case 'rejected':
         return `/result/rejected/${app.id}`;
       case 'pending_nip':
+        return `/application/verify-nip/${app.id}`;
       case 'incomplete':
       default:
         return `/application/step/1?edit=${app.id}`;
@@ -240,7 +245,7 @@ export default function DashboardPage() {
             <h2 className="text-2xl font-bold mb-4">
               {isLoading 
                 ? 'Cargando...' 
-                : `Bienvenido a tu panel de Druli${userName ? ', ' + userName : ''}`}
+                : `Bienvenido a tu panel de Druli${userName && userName !== 'Usuario' ? ', ' + userName : ''}`}
             </h2>
             <p className="text-gray-600 mb-6">
               Desde aquí podrás gestionar tus solicitudes de arrendamiento, revisar el estado de tus

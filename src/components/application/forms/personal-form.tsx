@@ -264,7 +264,7 @@ export function PersonalForm({ initialData, onSubmit, applicationId }: PersonalF
                       onChange={(e) => field.onChange(parseInt(e.target.value))}
                     />
                   </FormControl>
-                  <FormDescription>
+                  <FormDescription className="text-xs text-gray-500 italic">
                     Indica cuántas personas dependen económicamente de ti
                   </FormDescription>
                   <FormMessage />

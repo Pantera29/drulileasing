@@ -29,7 +29,9 @@ export async function middleware(request: NextRequest) {
   const url = new URL(request.url);
   const isProtectedRoute = 
     url.pathname.startsWith('/dashboard') || 
-    url.pathname.startsWith('/step/');
+    url.pathname.startsWith('/step/') ||
+    url.pathname.startsWith('/application/verify-nip/') ||
+    url.pathname.startsWith('/application/step/');
   
   const isAuthRoute = 
     url.pathname.startsWith('/login') || 

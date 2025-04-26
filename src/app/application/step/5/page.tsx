@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 import { evaluateApplication } from '@/lib/services/credit-evaluation';
 import { Metadata } from 'next';
 import { StepLayout } from '@/components/application/step-layout';
+import { BUREAU_CONFIG } from '@/lib/services/bureau/config';
 
 export const metadata: Metadata = {
   title: 'Confirmación de solicitud | Crédito Druli',
@@ -149,6 +150,9 @@ export default async function ConfirmationPage() {
           case 'rejected':
             redirectUrl = `/result/rejected/${application.id}`;
             break;
+          case 'pending_nip':
+            redirectUrl = `/application/verify-nip/${application.id}`;
+            break;
           default:
             redirectUrl = '/dashboard';
         }
@@ -235,47 +239,44 @@ export default async function ConfirmationPage() {
         };
       }
       
-      // Importar y usar el servicio Kiban para enviar el NIP
+      // Importar y usar el servicio del buró para enviar el NIP
       try {
         // SEGUNDO: Enviar el NIP
-        const { KibanService } = await import('@/lib/services/kiban/kiban.service');
-        const kibanService = new KibanService();
+        const { BureauService } = await import('@/lib/services/bureau/bureau.service');
+        const bureauService = new BureauService();
         
         // Enviar NIP al teléfono del usuario
-        const kibanRequestId = await kibanService.sendNip(contactInfo.mobile_phone);
+        const response = await bureauService.sendNip(contactInfo.mobile_phone);
         
-        // Registrar ID de solicitud de Kiban en la aplicación (sin cambiar el estado que ya actualizamos)
+        // Determinar el campo a actualizar según el proveedor activo
+        const updateData = BUREAU_CONFIG.activeProvider === 'kiban' 
+          ? { kiban_request_id: response.requestId }
+          : { 
+              external_request_id: response.requestId,
+              external_provider: BUREAU_CONFIG.activeProvider 
+            };
+        
+        // Registrar ID de solicitud en la aplicación (sin cambiar el estado que ya actualizamos)
         await supabase
           .from('credit_applications')
           .update({
-            kiban_request_id: kibanRequestId,
-            updated_at: new Date().toISOString(),
+            ...updateData,
+            updated_at: new Date().toISOString()
           })
           .eq('id', applicationId);
-          
-        console.log('NIP enviado correctamente, ID de solicitud Kiban:', kibanRequestId);
-        
-        // Verificar que el estado siga siendo pending_nip
-        const { data: verifyStatus } = await supabase
-          .from('credit_applications')
-          .select('application_status')
-          .eq('id', applicationId)
-          .single();
-          
-        console.log('Estado final de la aplicación:', verifyStatus?.application_status);
-        
+
         // Redirigir a la página de verificación de NIP
         return {
           success: true,
           redirectTo: `/application/verify-nip/${applicationId}`,
-          message: 'Código enviado correctamente, redirigiendo a verificación'
+          message: 'Código enviado correctamente'
         };
-      } catch (kibanError) {
-        console.error('Error al enviar NIP con Kiban:', kibanError);
+      } catch (error) {
+        console.error('Error al enviar NIP:', error);
         return {
           success: false,
           redirectTo: null,
-          message: 'Error al enviar el código de verificación. Intente nuevamente.'
+          message: 'Error al enviar el código de verificación'
         };
       }
     } catch (error) {
