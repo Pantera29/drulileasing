@@ -2,6 +2,7 @@ import React from 'react';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
+import { createBrowserClient } from '@supabase/ssr';
 import { 
   LayoutDashboard, 
   ClipboardList, 
@@ -12,6 +13,7 @@ import {
   Search
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { LogoutButton } from '@/components/LogoutButton';
 
 // Forzar que la ruta sea dinámica para siempre verificar la autenticación
 export const dynamic = 'force-dynamic';
@@ -57,16 +59,26 @@ export default async function AdminLayout({
     redirect('/login?error=unauthorized');
   }
   
-  // Obtener el nombre del usuario
+  // Obtener el nombre y correo del usuario directamente de la vista user_emails
   const supabase = await createClient();
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('full_name')
+  const { data: authUser } = await supabase
+    .from('user_emails')
+    .select('full_name, email')
     .eq('id', user?.id)
     .single();
+
+  const userName = authUser?.full_name || authUser?.email?.split('@')[0] || 'Usuario';
   
-  const userName = profile?.full_name || user?.email?.split('@')[0] || 'Usuario';
-  
+  // Handler para logout desde el cliente
+  const handleLogout = async () => {
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+    await supabase.auth.signOut();
+    window.location.href = '/login';
+  };
+
   return (
     <div className="min-h-screen bg-gray-100 flex">
       {/* Barra lateral */}
@@ -107,12 +119,7 @@ export default async function AdminLayout({
           
           <div className="border-t border-indigo-800 my-4"></div>
           
-          <form action="/auth/signout" method="post">
-            <button className="w-full flex items-center px-6 py-3 hover:bg-indigo-800 transition-colors">
-              <LogOut className="h-5 w-5 mr-3" />
-              <span>Cerrar sesión</span>
-            </button>
-          </form>
+          <LogoutButton />
         </nav>
       </div>
       

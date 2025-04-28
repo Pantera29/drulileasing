@@ -317,7 +317,8 @@ async function getApplicationData(id: string) {
       equipmentResult, 
       analystResult, 
       bureauResult,
-      decisionsResult
+      decisionsResult,
+      userEmailResult
     ] = await Promise.all([
       // Obtener perfil del usuario
       supabase
@@ -401,7 +402,14 @@ async function getApplicationData(id: string) {
         .from('analyst_decisions')
         .select('*')
         .eq('application_id', id)
-        .order('created_at', { ascending: false })
+        .order('created_at', { ascending: false }),
+      
+      // Obtener email del usuario dueño de la solicitud
+      supabase
+        .from('user_emails')
+        .select('email')
+        .eq('id', app.user_id)
+        .maybeSingle()
     ]);
     
     // Extraer datos de los resultados
@@ -412,6 +420,7 @@ async function getApplicationData(id: string) {
     const analystInfo = analystResult.data;
     const creditBureauDetails = bureauResult.data;
     const previousDecisions = decisionsResult.data;
+    const userEmail = userEmailResult.data?.email;
     
     // Verificar si alguna consulta falló
     if (profilesResult.error) console.error('Error al obtener perfil:', profilesResult.error);
@@ -474,7 +483,8 @@ async function getApplicationData(id: string) {
       isAssignedToMe,
       isPendingAnalysis,
       analysts,
-      user
+      user,
+      userEmail
     };
   } catch (error) {
     console.error('Error al obtener detalles de la solicitud:', error);
@@ -522,7 +532,8 @@ export default async function ApplicationDetailPage({
     isAssignedToMe, 
     isPendingAnalysis, 
     analysts,
-    user
+    user,
+    userEmail
   } = data;
   
   // Obtener nombre del analista
@@ -566,6 +577,16 @@ export default async function ApplicationDetailPage({
   // Verificar acciones disponibles para el analista actual
   const canStartAnalysis = isPendingAnalysis && isAssignedToMe && !app.analysis_started_at;
   const canTakeDecision = isPendingAnalysis && isAssignedToMe && !!app.analysis_started_at;
+
+  // LOG DE DEPURACIÓN PARA VISIBILIDAD DE BOTONES
+  console.log('[DEBUG] Visibilidad de botones:', {
+    isAssignedToMe,
+    isPendingAnalysis,
+    analysis_started_at: app.analysis_started_at,
+    application_status: app.application_status,
+    canStartAnalysis,
+    canTakeDecision
+  });
   
   return (
     <div className="space-y-6">
@@ -612,7 +633,7 @@ export default async function ApplicationDetailPage({
           {!isAssignedToMe && (
             <form action={assignToCurrentAnalyst}>
               <input type="hidden" name="applicationId" value={app.id} />
-              <Button type="submit" size="sm" className="inline-flex items-center">
+              <Button type="submit" size="sm" className="bg-blue-600 hover:bg-blue-700 text-white shadow inline-flex items-center">
                 <UserPlus className="h-4 w-4 mr-1" />
                 Asignarme
               </Button>
@@ -633,7 +654,7 @@ export default async function ApplicationDetailPage({
               }
             }}>
               <input type="hidden" name="applicationId" value={app.id} />
-              <Button type="submit" size="sm" className="inline-flex items-center">
+              <Button type="submit" size="sm" className="bg-blue-600 hover:bg-blue-700 text-white shadow inline-flex items-center">
                 <Play className="h-4 w-4 mr-1" />
                 Iniciar análisis
               </Button>
@@ -642,12 +663,20 @@ export default async function ApplicationDetailPage({
           
           {/* Botón para tomar decisión */}
           {isAssignedToMe && app.analysis_started_at && (
-            <Button size="sm" className="inline-flex items-center" asChild>
-              <Link href={`/admin/applications/${id}/decision`}>
-                <Check className="h-4 w-4 mr-1" />
-                Tomar decisión
-              </Link>
-            </Button>
+            <div className="flex gap-2">
+              <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white shadow inline-flex items-center" asChild>
+                <Link href={`/admin/applications/${id}/approve`}>
+                  <CheckCircle className="h-4 w-4 mr-1" />
+                  Aprobar
+                </Link>
+              </Button>
+              <Button size="sm" className="bg-red-600 hover:bg-red-700 text-white shadow inline-flex items-center" asChild>
+                <Link href={`/admin/applications/${id}/reject`}>
+                  <XCircle className="h-4 w-4 mr-1" />
+                  Rechazar
+                </Link>
+              </Button>
+            </div>
           )}
         </div>
       </div>
@@ -722,20 +751,27 @@ export default async function ApplicationDetailPage({
                     <p className="font-medium">{profiles?.curp_rfc || 'No disponible'}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">Edad</p>
-                    <p className="font-medium">{calculateAge(profiles?.date_of_birth)}</p>
+                    <p className="text-sm text-gray-500">Fecha de nacimiento</p>
+                    <p className="font-medium">{profiles?.birth_date ? new Date(profiles.birth_date).toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' }) : 'No disponible'}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">Género</p>
-                    <p className="font-medium">{profiles?.gender || 'No disponible'}</p>
+                    <p className="text-sm text-gray-500">Edad</p>
+                    <p className="font-medium">{profiles?.birth_date ? calculateAge(profiles.birth_date) : 'No disponible'}</p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Estado civil</p>
-                    <p className="font-medium">{profiles?.marital_status || 'No disponible'}</p>
+                    <p className="font-medium">{
+                      profiles?.marital_status === 'soltero' ? 'Soltero/a' :
+                      profiles?.marital_status === 'casado' ? 'Casado/a' :
+                      profiles?.marital_status === 'union_libre' ? 'Unión libre' :
+                      profiles?.marital_status === 'divorciado' ? 'Divorciado/a' :
+                      profiles?.marital_status === 'viudo' ? 'Viudo/a' :
+                      profiles?.marital_status || 'No disponible'
+                    }</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">Dependientes</p>
-                    <p className="font-medium">{profiles?.number_of_dependents || '0'}</p>
+                    <p className="text-sm text-gray-500">Dependientes económicos</p>
+                    <p className="font-medium">{profiles?.dependents ?? '0'}</p>
                   </div>
                 </div>
               </CardContent>
@@ -750,35 +786,36 @@ export default async function ApplicationDetailPage({
                 </div>
               </CardHeader>
               <CardContent>
-                {contact ? (
-                  <div className="grid grid-cols-1 gap-y-4">
-                    <div>
-                      <p className="text-sm text-gray-500">Dirección completa</p>
-                      <p className="font-medium">
-                        {[
-                          contact.street,
-                          contact.street_number,
-                          contact.neighborhood,
-                          contact.city,
-                          contact.state,
-                          contact.zip_code ? `CP ${contact.zip_code}` : ''
-                        ].filter(Boolean).join(', ')}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500">Teléfono móvil</p>
-                      <p className="font-medium">{contact.mobile_phone || 'No disponible'}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500">Correo electrónico</p>
-                      <p className="font-medium">{contact.email || 'No disponible'}</p>
-                    </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4">
+                  <div>
+                    <p className="text-sm text-gray-500">Correo electrónico</p>
+                    <p className="font-medium">{userEmail}</p>
                   </div>
-                ) : (
-                  <div className="text-center py-6">
-                    <p className="text-gray-500">No hay información de contacto disponible</p>
+                  <div>
+                    <p className="text-sm text-gray-500">Teléfono móvil</p>
+                    <p className="font-medium">{contact?.mobile_phone}</p>
                   </div>
-                )}
+                  <div>
+                    <p className="text-sm text-gray-500">Calle y número</p>
+                    <p className="font-medium">{contact ? `${contact.street} ${contact.street_number}` : ''}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Colonia</p>
+                    <p className="font-medium">{contact?.neighborhood}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Ciudad</p>
+                    <p className="font-medium">{contact?.city}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Estado</p>
+                    <p className="font-medium">{contact?.state}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Código postal</p>
+                    <p className="font-medium">{contact?.zip_code}</p>
+                  </div>
+                </div>
               </CardContent>
             </Card>
             
@@ -795,23 +832,19 @@ export default async function ApplicationDetailPage({
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4">
                     <div>
                       <p className="text-sm text-gray-500">Ocupación</p>
-                      <p className="font-medium">{financial.occupation || 'No disponible'}</p>
+                      <p className="font-medium">{financial.occupation}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-500">Tipo de empleo</p>
-                      <p className="font-medium">{financial.employment_type || 'No disponible'}</p>
+                      <p className="text-sm text-gray-500">Compañía</p>
+                      <p className="font-medium">{financial.company_name}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-500">Empleador</p>
-                      <p className="font-medium">{financial.employer_name || 'No disponible'}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500">Fecha de inicio</p>
-                      <p className="font-medium">{formatDate(financial.employment_start_date)}</p>
+                      <p className="text-sm text-gray-500">Antigüedad Laboral</p>
+                      <p className="font-medium">{financial.employment_time}</p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">Ingreso mensual</p>
-                      <p className="font-medium">{formatCurrency(financial.monthly_income || 0)}</p>
+                      <p className="font-medium">{formatCurrency(financial.monthly_income)}</p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">Ingreso adicional</p>
@@ -1090,69 +1123,6 @@ export default async function ApplicationDetailPage({
           </Card>
         </TabsContent>
       </Tabs>
-      
-      {/* Acciones */}
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>Acciones</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-3">
-            {!isAssignedToMe && app.analyst_id && (
-              <Button variant="outline" size="sm" className="inline-flex items-center" disabled>
-                <UserCheck className="h-4 w-4 mr-1" />
-                Asignado a otro analista
-              </Button>
-            )}
-            
-            {!isAssignedToMe && !app.analyst_id && (
-              <form action={assignToCurrentAnalyst}>
-                <input type="hidden" name="applicationId" value={app.id} />
-                <Button type="submit" size="sm" className="inline-flex items-center">
-                  <UserPlus className="h-4 w-4 mr-1" />
-                  Asignarme esta solicitud
-                </Button>
-              </form>
-            )}
-            
-            {isAssignedToMe && !app.analysis_start_date && (
-              <form action={async (formData) => {
-                'use server';
-                console.log('Formulario de inicio de análisis enviado (sección de acciones)');
-                try {
-                  console.log('Llamando a startAnalysis');
-                  await startAnalysis(formData);
-                  console.log('startAnalysis completado sin errores');
-                } catch (error) {
-                  console.error('Error al iniciar análisis:', error);
-                }
-              }}>
-                <input type="hidden" name="applicationId" value={app.id} />
-                <Button type="submit" size="sm" className="inline-flex items-center">
-                  <Play className="h-4 w-4 mr-1" />
-                  Iniciar análisis
-                </Button>
-              </form>
-            )}
-            
-            {isAssignedToMe && app.analysis_start_date && !app.analysis_complete_date && (
-              <Button size="sm" className="inline-flex items-center" asChild>
-                <Link href={`/admin/applications/${id}/decision`}>
-                  <Check className="h-4 w-4 mr-1" />
-                  Tomar decisión
-                </Link>
-              </Button>
-            )}
-            
-            {app.analysis_complete_date && (
-              <Button variant="outline" size="sm" className="inline-flex items-center" disabled>
-                <CheckCheck className="h-4 w-4 mr-1" />
-                Análisis completado
-              </Button>
-            )}
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 } 

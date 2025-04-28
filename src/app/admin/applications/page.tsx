@@ -12,7 +12,7 @@ export const fetchCache = 'force-no-store';
 
 // Valores por defecto para searchParams
 const defaultSearchParams = {
-  status: 'pending_analysis',
+  status: 'all',
   search: '',
   scoreMin: '0',
   scoreMax: '999',
@@ -43,7 +43,7 @@ export default async function ApplicationsPage({
   const page = parseInt(Array.isArray(resolvedSearchParams?.page) ? resolvedSearchParams.page[0] : resolvedSearchParams?.page || defaultSearchParams.page);
   const errorMsg = Array.isArray(resolvedSearchParams?.error) ? resolvedSearchParams.error[0] : resolvedSearchParams?.error;
   
-  const pageSize = 10;
+  const pageSize = 25;
   const offset = (page - 1) * pageSize;
   
   console.log(`Buscando solicitudes con estado: "${status}"`);
@@ -279,6 +279,7 @@ export default async function ApplicationsPage({
                     <th className="text-left py-3 px-2 font-medium">Plazo</th>
                     <th className="text-left py-3 px-2 font-medium">Score</th>
                     <th className="text-left py-3 px-2 font-medium">Fecha</th>
+                    <th className="text-left py-3 px-2 font-medium">Estado</th>
                     <th className="text-left py-3 px-2 font-medium">Analista</th>
                     <th className="text-right py-3 px-2 font-medium">Acción</th>
                   </tr>
@@ -300,6 +301,15 @@ export default async function ApplicationsPage({
                         </td>
                         <td className="py-3 px-2">
                           {app.created_at ? formatDate(app.created_at) : 'N/A'}
+                        </td>
+                        <td className="py-3 px-2">
+                          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                            ${app.application_status === 'approved' ? 'bg-green-100 text-green-800' : 
+                              app.application_status === 'in_review' || app.application_status === 'pending_analysis' ? 'bg-amber-100 text-amber-800' :
+                              app.application_status === 'rejected' ? 'bg-red-100 text-red-800' :
+                              'bg-gray-100 text-gray-800'}`}>
+                            {statusNames[app.application_status] || app.application_status}
+                          </span>
                         </td>
                         <td className="py-3 px-2">
                           {app.analyst_id ? (
@@ -418,7 +428,21 @@ function StatusFilter({
     <Link href={`/admin/applications?status=${value}`}>
       <div className={`px-3 py-1 rounded-full text-sm flex items-center cursor-pointer transition-colors ${colorClasses[color]}`}>
         {label}
-        <span className="ml-1 bg-white bg-opacity-20 px-1.5 py-0.5 rounded-full text-xs">
+        <span
+          className={`ml-1 px-1.5 py-0.5 rounded-full text-xs
+            ${isActive
+              ? color === 'green'
+                ? 'bg-green-600 text-white'
+                : color === 'red'
+                ? 'bg-red-600 text-white'
+                : color === 'amber'
+                ? 'bg-amber-500 text-white'
+                : color === 'indigo'
+                ? 'bg-indigo-600 text-white'
+                : 'bg-gray-900 text-white'
+              : 'bg-white text-gray-800'}
+          `}
+        >
           {count}
         </span>
       </div>
@@ -429,7 +453,6 @@ function StatusFilter({
 // Función para obtener el nombre del analista
 function getAnalystName(analystId: string, analysts: any[] | null): string | null {
   if (!analysts) return null;
-  
   for (const analyst of analysts) {
     if (analyst.user_id === analystId) {
       if (analyst.users?.profiles?.full_name) {
@@ -439,7 +462,6 @@ function getAnalystName(analystId: string, analysts: any[] | null): string | nul
       }
     }
   }
-  
   return null;
 }
 
@@ -464,4 +486,4 @@ function getScoreColor(score: number | null): string {
   if (score >= 700) return 'bg-green-100 text-green-800';
   if (score >= 600) return 'bg-yellow-100 text-yellow-800';
   return 'bg-red-100 text-red-800';
-} 
+}

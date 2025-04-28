@@ -153,7 +153,8 @@ export default async function RejectApplicationPage({
       // 4. Enviar notificación al usuario (opcional)
       // Aquí se implementaría el código para enviar una notificación por email
       
-      return { success: true };
+      // REDIRECCIÓN AL ÉXITO
+      redirect('/admin/applications?success=rejected');
     } catch (error) {
       console.error('Error en el proceso de rechazo:', error);
       return { success: false, message: 'Error en el proceso de rechazo' };
@@ -239,7 +240,7 @@ export default async function RejectApplicationPage({
             </div>
             
             <div className="flex flex-col sm:flex-row gap-4 pt-4">
-              <Button type="submit" variant="destructive" className="flex-1 flex items-center justify-center">
+              <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white shadow flex-1 flex items-center justify-center">
                 <XCircle className="h-5 w-5 mr-2" />
                 Confirmar rechazo
               </Button>
