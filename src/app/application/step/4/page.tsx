@@ -26,7 +26,7 @@ export default async function EquipmentInfoPage() {
     .from('credit_applications')
     .select('id, equipment_id')
     .eq('user_id', session.user.id)
-    .eq('application_status', 'incomplete')
+    .eq('status', 'pending')
     .order('updated_at', { ascending: false })
     .limit(1)
     .single();
@@ -38,130 +38,104 @@ export default async function EquipmentInfoPage() {
 
   // Obtener el catálogo de equipos activos
   const { data: equipmentCatalog } = await supabase
-    .from('equipment_catalog')
-    .select('*')
+    .from('equipment')
+    .select(`
+      id,
+      name,
+      brand,
+      model,
+      price,
+      description,
+      specifications,
+      company_id,
+      equipment_companies!inner(
+        name,
+        is_active
+      )
+    `)
     .eq('is_active', true)
+    .eq('equipment_companies.is_active', true)
     .order('brand', { ascending: true });
   
-  // Obtener los datos del equipo si existen
-  let equipmentData = null;
+  // Obtener el equipo seleccionado si existe
+  let selectedEquipment = null;
   if (application.equipment_id) {
     const { data: equipment } = await supabase
-      .from('equipment_requests')
-      .select('*')
+      .from('equipment')
+      .select(`
+        id,
+        name,
+        brand,
+        model,
+        price,
+        description,
+        equipment_companies(name)
+      `)
       .eq('id', application.equipment_id)
       .single();
       
     if (equipment) {
-      equipmentData = equipment;
+      selectedEquipment = equipment;
     }
   }
   
-  // Función para guardar los datos del equipo
-  async function saveEquipmentData(data: EquipmentFormData) {
+  // Función simplificada para guardar selección de equipo
+  async function saveEquipmentSelection(data: { equipment_id: string; desired_term: number; additional_comments?: string }) {
     'use server';
     
     const supabase = await createClient();
     
     try {
-      console.log("Recibiendo datos en servidor:", JSON.stringify(data));
-      
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
-        console.error("No hay sesión activa");
         return false;
       }
       
       // Obtener aplicación actual
-      const { data: application, error: appError } = await supabase
+      const { data: application } = await supabase
         .from('credit_applications')
-        .select('id, equipment_id')
+        .select('id')
         .eq('user_id', session.user.id)
-        .eq('application_status', 'incomplete')
+        .eq('status', 'pending')
         .order('updated_at', { ascending: false })
         .limit(1)
         .single();
       
-      if (appError || !application) {
-        console.error("Error al buscar aplicación:", appError?.message);
+      if (!application) {
         return false;
       }
       
-      // Preparar datos exactamente como están en la tabla
-      const equipmentData = {
-        user_id: session.user.id,
-        equipment_catalog_id: data.equipment_catalog_id,
-        equipment_type: data.equipment_type,
-        equipment_brand: data.equipment_brand,
-        equipment_model: data.equipment_model,
-        equipment_full_name: data.equipment_full_name,
-        approximate_amount: data.approximate_amount || 10000,
-        desired_term: data.desired_term || 24,
-        additional_comments: data.additional_comments || null,
-        updated_at: new Date().toISOString()
-      };
+      // Obtener datos del equipo seleccionado
+      const { data: equipment } = await supabase
+        .from('equipment')
+        .select('price')
+        .eq('id', data.equipment_id)
+        .single();
       
-      // Creación o actualización simplificada
-      let equipmentId;
-      
-      if (application.equipment_id) {
-        // Actualizar equipo existente - eliminar user_id porque no se debe actualizar
-        const { error: updateError } = await supabase
-          .from('equipment_requests')
-          .update({
-            equipment_catalog_id: equipmentData.equipment_catalog_id,
-            equipment_type: equipmentData.equipment_type,
-            equipment_brand: equipmentData.equipment_brand,
-            equipment_model: equipmentData.equipment_model,
-            equipment_full_name: equipmentData.equipment_full_name,
-            approximate_amount: equipmentData.approximate_amount,
-            desired_term: equipmentData.desired_term,
-            additional_comments: equipmentData.additional_comments,
-            updated_at: equipmentData.updated_at
-          })
-          .eq('id', application.equipment_id);
-          
-        if (updateError) {
-          console.error("Error al actualizar equipo:", updateError);
-          return false;
-        }
-        
-        equipmentId = application.equipment_id;
-      } else {
-        // Crear nuevo equipo
-        const { data: newEquipment, error: insertError } = await supabase
-          .from('equipment_requests')
-          .insert(equipmentData)
-          .select('id')
-          .single();
-        
-        if (insertError || !newEquipment) {
-          console.error("Error al crear equipo:", insertError?.message);
-          return false;
-        }
-        
-        equipmentId = newEquipment.id;
+      if (!equipment) {
+        return false;
       }
       
-      // Actualizar referencia en aplicación
-      const { error: appUpdateError } = await supabase
+      // Actualizar solicitud con equipo seleccionado y términos básicos
+      const { error } = await supabase
         .from('credit_applications')
         .update({
-          equipment_id: equipmentId,
+          equipment_id: data.equipment_id,
+          equipment_price: equipment.price,
+          financed_amount: equipment.price, // Sin enganche por defecto
+          term_months: data.desired_term,
+          // Cálculos básicos (después los haremos más sofisticados)
+          interest_rate: 0.125, // 12.5% por defecto
+          monthly_payment: equipment.price * 0.125 / 12 * data.desired_term,
+          total_to_pay: equipment.price * 1.125,
           updated_at: new Date().toISOString()
         })
         .eq('id', application.id);
-        
-      if (appUpdateError) {
-        console.error("Error al actualizar aplicación:", appUpdateError);
-        return false;
-      }
       
-      console.log("Datos guardados exitosamente");
-      return true;
+      return !error;
     } catch (error) {
-      console.error("Error general:", error);
+      console.error('Error:', error);
       return false;
     }
   }
@@ -169,9 +143,9 @@ export default async function EquipmentInfoPage() {
   return (
     <div>
       <EquipmentForm 
-        initialData={equipmentData} 
+        selectedEquipment={selectedEquipment} 
         equipmentCatalog={equipmentCatalog || []}
-        onSubmit={saveEquipmentData}
+        onSubmit={saveEquipmentSelection}
         applicationId={application.id}
       />
     </div>

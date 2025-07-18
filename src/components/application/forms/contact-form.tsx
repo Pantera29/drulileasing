@@ -39,14 +39,14 @@ export function ContactForm({ initialData, onSubmit, applicationId }: ContactFor
   const [isLoadingPostalCode, setIsLoadingPostalCode] = React.useState(false);
   const router = useRouter();
   
-  const defaultValues = initialData || {
-    street: '',
-    street_number: '',
-    neighborhood: '',
-    city: '',
-    state: '',
-    zip_code: '',
-    mobile_phone: '',
+  const defaultValues = {
+    street: initialData?.street || '',
+    street_number: initialData?.street_number || '',
+    neighborhood: initialData?.neighborhood || '',
+    city: initialData?.city || '',
+    state: initialData?.state || '',
+    zip_code: initialData?.zip_code || '',
+    mobile_phone: initialData?.mobile_phone || '',
   };
   
   const form = useForm<ContactFormData>({

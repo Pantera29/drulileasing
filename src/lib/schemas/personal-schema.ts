@@ -61,6 +61,11 @@ export const personalSchema = z.object({
     .int()
     .min(0, { message: 'El número de dependientes no puede ser negativo' })
     .max(20, { message: 'El número de dependientes parece ser demasiado alto' }),
+  
+  // Nuevos campos para soporte multi-tenant (opcionales para mantener compatibilidad)
+  user_type: z.enum(['customer', 'equipment_company_employee', 'druli_employee']).default('customer'),
+  equipment_company_id: z.string().uuid().optional(),
+  is_active: z.boolean().default(true),
 });
 
 export type PersonalFormData = z.infer<typeof personalSchema>; 

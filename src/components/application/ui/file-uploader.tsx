@@ -1,5 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import React, { useState, useRef } from 'react';
 
 interface FileUploaderProps {
   bucketName: string;
@@ -27,48 +26,6 @@ export function FileUploader({
   const [error, setError] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
-  // Creamos un cliente Supabase en el cliente
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
-  );
-  
-  // Verificar que el bucket existe al cargar el componente
-  useEffect(() => {
-    const checkBucket = async () => {
-      try {
-        // Intentar obtener los detalles del bucket
-        const { data: bucketExists, error } = await supabase.storage.getBucket(bucketName);
-        
-        if (error) {
-          const errorObj = error as any; // Cast para acceder a propiedades
-          if (errorObj.statusCode === '404' || errorObj.message?.includes('not found')) {
-            console.log(`El bucket "${bucketName}" no existe, intentando crearlo...`);
-            // Si el bucket no existe, intentamos crearlo
-            const { data, error: createError } = await supabase.storage.createBucket(bucketName, {
-              public: true
-            });
-            
-            if (createError) {
-              console.error('Error al crear bucket:', createError);
-              setError(`Error al preparar el almacenamiento: ${createError.message}`);
-            } else {
-              console.log(`Bucket "${bucketName}" creado exitosamente`);
-            }
-          } else {
-            console.error('Error al verificar bucket:', error);
-            setError(`Error al verificar almacenamiento: ${error.message}`);
-          }
-        }
-      } catch (err) {
-        console.error('Error al verificar/crear bucket:', err);
-        setError('Error al configurar el almacenamiento. Por favor contacte a soporte.');
-      }
-    };
-    
-    checkBucket();
-  }, [bucketName, supabase.storage]);
   
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     try {
@@ -115,47 +72,35 @@ export function FileUploader({
     try {
       setUploading(true);
       
-      // Crear un nombre de archivo único
-      const timestamp = new Date().getTime();
-      const fileExtension = file.name.split('.').pop();
-      const fileName = `${userId}_${fileType}_${timestamp}.${fileExtension}`;
-      const filePath = `${folderPath}/${fileName}`;
+      console.log(`Intentando subir archivo al bucket "${bucketName}"`);
       
-      console.log(`Intentando subir archivo al bucket "${bucketName}" en la ruta "${filePath}"`);
+      // Crear FormData para enviar a la API
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('bucketName', bucketName);
+      formData.append('folderPath', folderPath);
+      formData.append('fileType', fileType);
+      formData.append('userId', userId);
       
-      // Subir el archivo a Supabase Storage
-      const { data, error } = await supabase.storage
-        .from(bucketName)
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: true,
-        });
-        
-      if (error) {
-        console.error('Error completo de Supabase:', error);
-        
-        const errorObj = error as any; // Cast para acceder a propiedades
-        if (errorObj.statusCode === '404' || errorObj.message?.includes('not found')) {
-          setError(`El bucket "${bucketName}" no existe. Por favor contacte a soporte técnico.`);
-        } else if (errorObj.statusCode === '403' || errorObj.message?.includes('permission')) {
-          setError('No tiene permisos para subir archivos. Por favor contacte a soporte técnico.');
-        } else {
-          setError(`Error al subir el archivo: ${error.message}`);
-        }
-        
-        throw error;
+      // Subir el archivo usando la API route
+      const response = await fetch('/api/upload-file', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      const result = await response.json();
+      
+      if (!response.ok) {
+        console.error('Error al subir archivo:', result.error);
+        setError(`Error al subir el archivo: ${result.error}`);
+        throw new Error(result.error);
       }
       
-      console.log('Archivo subido exitosamente:', data);
+      console.log('Archivo subido exitosamente:', result);
       
-      // Obtener la URL pública del archivo
-      const { data: urlData } = supabase.storage
-        .from(bucketName)
-        .getPublicUrl(filePath);
-        
       // Notificar al componente padre que el archivo se subió exitosamente
-      onFileUploaded(urlData.publicUrl);
-      console.log('URL pública generada:', urlData.publicUrl);
+      onFileUploaded(result.url);
+      console.log('URL pública generada:', result.url);
     } catch (err) {
       console.error('Error al subir el archivo:', err);
       const error = err as Error;

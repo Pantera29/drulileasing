@@ -58,6 +58,10 @@ export function PersonalForm({ initialData, onSubmit, applicationId }: PersonalF
         curp_rfc: '',
         marital_status: undefined,
         dependents: 0,
+        // Valores por defecto para nuevos campos
+        user_type: 'customer' as const,
+        equipment_company_id: undefined,
+        is_active: true,
       };
       
   const form = useForm<PersonalFormData>({

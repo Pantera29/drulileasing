@@ -8,7 +8,7 @@ import { createBrowserClient } from '@supabase/ssr';
 // Definir interfaces para tipado
 interface Application {
   id: string;
-  application_status: string;
+  status: string;
   created_at: string;
   updated_at: string;
   approved_amount?: number;
@@ -79,6 +79,10 @@ export default function DashboardPage() {
                 curp_rfc: 'XXXX000000XXXXXX00',
                 marital_status: 'soltero',
                 dependents: 0,
+                // Nuevos campos con valores por defecto
+                user_type: 'customer',
+                equipment_company_id: null,
+                is_active: true,
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString()
               }, {
@@ -114,15 +118,15 @@ export default function DashboardPage() {
                 
                 // Contar solicitudes por estado
                 const pending = allApplications.filter(app => 
-                  app.application_status === 'pending_nip' || 
-                  app.application_status === 'incomplete'
+                  app.status === 'pending_nip' || 
+                  app.status === 'pending'
                 ).length;
-                const approved = allApplications.filter(app => app.application_status === 'approved').length;
+                const approved = allApplications.filter(app => app.status === 'approved').length;
                 const inReview = allApplications.filter(app => 
-                  app.application_status === 'in_review' || 
-                  app.application_status === 'pending_analysis'
+                  app.status === 'in_review' || 
+                  app.status === 'pending_analysis'
                 ).length;
-                const rejected = allApplications.filter(app => app.application_status === 'rejected').length;
+                const rejected = allApplications.filter(app => app.status === 'rejected').length;
                 
                 setPendingCount(pending);
                 setApprovedCount(approved);

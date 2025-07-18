@@ -72,6 +72,8 @@ export function RegisterForm() {
           data: {
             full_name: data.fullName,
           },
+          // Configurar la URL de redirección después de la verificación
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
         }
       });
 

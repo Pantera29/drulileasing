@@ -43,7 +43,7 @@ export default async function PersonalDataPage() {
         .from('credit_applications')
         .select('id, profile_id')
         .eq('user_id', session.user.id)
-        .eq('application_status', 'incomplete')
+        .eq('status', 'pending')
         .order('updated_at', { ascending: false })
         .limit(1)
         .maybeSingle(); // Usamos maybeSingle en lugar de single para evitar errores
@@ -68,11 +68,28 @@ export default async function PersonalDataPage() {
       console.log('Creando nueva aplicación para el usuario', session.user.id);
       
       try {
+        // Primero obtener un equipo de la tabla equipment para usar como placeholder
+        const { data: placeholderEquipment } = await supabase
+          .from('equipment')
+          .select('id')
+          .limit(1)
+          .single();
+        
+        const equipmentId = placeholderEquipment?.id || '00000000-0000-0000-0000-000000000000';
+        
         const { data: newApplication, error: createError } = await supabase
           .from('credit_applications')
           .insert({
             user_id: session.user.id,
-            application_status: 'incomplete'
+            status: 'pending',
+            application_number: `APP-${Date.now()}`,
+            equipment_id: equipmentId,
+            equipment_price: 100000,
+            financed_amount: 100000,
+            term_months: 12,
+            interest_rate: 0.15,
+            monthly_payment: 10000,
+            total_to_pay: 120000
           })
           .select('id')
           .single();
@@ -161,6 +178,10 @@ export default async function PersonalDataPage() {
               curp_rfc: data.curp_rfc,
               marital_status: data.marital_status,
               dependents: data.dependents,
+              // Nuevos campos con valores por defecto para clientes
+              user_type: data.user_type || 'customer',
+              equipment_company_id: data.equipment_company_id || null,
+              is_active: data.is_active ?? true,
               updated_at: new Date().toISOString(),
             })
             .eq('id', session.user.id);
@@ -183,6 +204,10 @@ export default async function PersonalDataPage() {
               curp_rfc: data.curp_rfc,
               marital_status: data.marital_status,
               dependents: data.dependents,
+              // Nuevos campos con valores por defecto para clientes
+              user_type: data.user_type || 'customer',
+              equipment_company_id: data.equipment_company_id || null,
+              is_active: data.is_active ?? true,
             })
             .select('id')
             .single();
@@ -205,7 +230,7 @@ export default async function PersonalDataPage() {
           .from('credit_applications')
           .select('id')
           .eq('user_id', session.user.id)
-          .eq('application_status', 'incomplete')
+          .eq('status', 'pending')
           .order('updated_at', { ascending: false })
           .limit(1)
           .maybeSingle();

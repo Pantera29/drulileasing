@@ -25,7 +25,7 @@ export default async function FinancialInfoPage() {
     .from('credit_applications')
     .select('id, financial_id')
     .eq('user_id', session.user.id)
-    .eq('application_status', 'incomplete')
+    .eq('status', 'pending')
     .order('updated_at', { ascending: false })
     .limit(1)
     .single();
@@ -67,7 +67,7 @@ export default async function FinancialInfoPage() {
         .from('credit_applications')
         .select('id, financial_id')
         .eq('user_id', session.user.id)
-        .eq('application_status', 'incomplete')
+        .eq('status', 'pending')
         .order('updated_at', { ascending: false })
         .limit(1)
         .single();

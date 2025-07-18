@@ -21,14 +21,14 @@ import type { Equipment } from '@/lib/types/equipment';
 import { LoanSimulator } from '@/components/application/ui/loan-simulator';
 
 interface EquipmentFormProps {
-  initialData?: Partial<EquipmentFormData>;
-  equipmentCatalog?: Equipment[];
-  onSubmit: (data: EquipmentFormData) => Promise<boolean>;
+  selectedEquipment?: any; // Cambiado de initialData a selectedEquipment
+  equipmentCatalog?: any[]; // Cambiado de Equipment[] a any[] para evitar errores de tipos
+  onSubmit: (data: { equipment_id: string; desired_term: number; additional_comments?: string }) => Promise<boolean>;
   applicationId: string;
 }
 
 export function EquipmentForm({ 
-  initialData, 
+  selectedEquipment: initialSelectedEquipment, 
   equipmentCatalog = [], 
   onSubmit, 
   applicationId 
@@ -43,14 +43,14 @@ export function EquipmentForm({
   const [selectedTerm, setSelectedTerm] = useState(24);
 
   const defaultValues = {
-    equipment_catalog_id: initialData?.equipment_catalog_id || '',
-    equipment_type: initialData?.equipment_type || '',
-    equipment_brand: initialData?.equipment_brand || '',
-    equipment_model: initialData?.equipment_model || '',
-    equipment_full_name: initialData?.equipment_full_name || '',
-    approximate_amount: initialData?.approximate_amount || 100000,
-    desired_term: initialData?.desired_term || 24,
-    additional_comments: initialData?.additional_comments || '',
+    equipment_catalog_id: '',
+    equipment_type: '',
+    equipment_brand: '',
+    equipment_model: '',
+    equipment_full_name: '',
+    approximate_amount: 100000,
+    desired_term: 24,
+    additional_comments: '',
   };
   
   const form = useForm<EquipmentFormData>({
@@ -69,7 +69,7 @@ export function EquipmentForm({
         equipment.model.toLowerCase().includes(searchLower) ||
         equipment.family.toLowerCase().includes(searchLower) ||
         (equipment.features && Array.isArray(equipment.features) && 
-          equipment.features.some(feature => 
+          equipment.features.some((feature: any) => 
             typeof feature === 'string' && feature.toLowerCase().includes(searchLower)
           ))
       );
@@ -117,8 +117,19 @@ export function EquipmentForm({
     setSaveError(null);
     
     try {
-      console.log('Enviando datos del equipo:', data);
-      const success = await onSubmit(data);
+      if (!selectedEquipment) {
+        setSaveError('Por favor selecciona un equipo antes de continuar.');
+        return false;
+      }
+      
+      const submitData = {
+        equipment_id: selectedEquipment.id,
+        desired_term: data.desired_term,
+        additional_comments: data.additional_comments || undefined
+      };
+      
+      console.log('Enviando datos del equipo:', submitData);
+      const success = await onSubmit(submitData);
       
       if (success) {
         console.log('¡Datos guardados correctamente!');

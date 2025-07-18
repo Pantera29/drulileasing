@@ -25,7 +25,7 @@ export default async function ContactInfoPage() {
     .from('credit_applications')
     .select('id, contact_id')
     .eq('user_id', session.user.id)
-    .eq('application_status', 'incomplete')
+    .eq('status', 'pending')
     .order('updated_at', { ascending: false })
     .limit(1)
     .single();
@@ -72,7 +72,7 @@ export default async function ContactInfoPage() {
         .from('credit_applications')
         .select('id, contact_id')
         .eq('user_id', session.user.id)
-        .eq('application_status', 'incomplete')
+        .eq('status', 'pending')
         .order('updated_at', { ascending: false })
         .limit(1)
         .single();
@@ -105,13 +105,11 @@ export default async function ContactInfoPage() {
           const { error: updateError } = await supabase
             .from('contact_info')
             .update({
-              street: data.street,
-              street_number: data.street_number,
-              neighborhood: data.neighborhood,
-              city: data.city,
-              state: data.state,
-              zip_code: data.zip_code,
-              mobile_phone: data.mobile_phone,
+              address_street: data.street,
+              address_city: data.city,
+              address_state: data.state,
+              address_postal_code: data.zip_code,
+              phone: data.mobile_phone,
               updated_at: new Date().toISOString(),
             })
             .eq('id', application.contact_id);
@@ -133,13 +131,11 @@ export default async function ContactInfoPage() {
           .from('contact_info')
           .insert({
             user_id: session.user.id,
-            street: data.street,
-            street_number: data.street_number,
-            neighborhood: data.neighborhood,
-            city: data.city,
-            state: data.state,
-            zip_code: data.zip_code,
-            mobile_phone: data.mobile_phone,
+            address_street: data.street,
+            address_city: data.city,
+            address_state: data.state,
+            address_postal_code: data.zip_code,
+            phone: data.mobile_phone,
           })
           .select('id')
           .single();
