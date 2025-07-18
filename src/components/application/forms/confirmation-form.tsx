@@ -55,7 +55,7 @@ const EquipmentSection = ({ data }: { data: any }) => (
           </p>
         </div>
         <div>
-          <p className="text-sm text-gray-500">Plazo deseado</p>
+          <p className="text-sm text-gray-500">Plazo</p>
           <p className="text-base font-medium text-gray-900">
             {data.desired_term} meses
           </p>
